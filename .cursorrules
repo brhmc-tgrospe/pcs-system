@@ -1,0 +1,2 @@
+#Always run a test on every prompt or whenever there are new or updated codes. 
+#Check for errors during a test. If there are errors, immediately fix them. Run a test again to ensure that the errors are gone.
