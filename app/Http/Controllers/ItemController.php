@@ -52,22 +52,29 @@ class ItemController extends Controller
     public function destroy(Item $item): RedirectResponse
     {
         $name = $item->name;
-        $item->delete();
+
+        $item->deleteOrFail();
+
         return back()->with('success', "Item '{$name}' deleted successfully.");
     }
 
-    public function restore($id): RedirectResponse
+
+    public function restore(int $id): RedirectResponse
     {
         $item = Item::withTrashed()->findOrFail($id);
         $item->restore();
         return back()->with('success', "Item '{$item->name}' restored successfully.");
     }
 
-    public function forceDelete($id): RedirectResponse
+
+    public function forceDelete(int $id): RedirectResponse
     {
-        if (auth()->user()->role !== 'developer') {
+        $user = auth()->guard()->user();
+
+        if (!$user || $user->role !== 'developer') {
             return back()->with('error', 'Only developers can permanently delete data. Please contact the developer team to have this item permanently removed.');
         }
+
 
         $item = Item::withTrashed()->findOrFail($id);
         $name = $item->name;
@@ -82,9 +89,11 @@ class ItemController extends Controller
             'ids.*' => ['integer', 'exists:items,id'],
         ]);
 
-        $count = Item::whereIn('id', $validated['ids'])->delete();
+        $count = Item::destroy($validated['ids']);
+
         return back()->with('success', "{$count} item(s) deleted successfully.");
     }
+
 
     public function bulkRestore(Request $request): RedirectResponse
     {
@@ -94,14 +103,19 @@ class ItemController extends Controller
         ]);
 
         $count = Item::withTrashed()->whereIn('id', $validated['ids'])->restore();
+
         return back()->with('success', "{$count} item(s) restored successfully.");
     }
 
+
+
     public function bulkForceDelete(Request $request): RedirectResponse
     {
-        if (auth()->user()->role !== 'developer') {
+        $user = auth()->guard()->user();
+        if (!$user || $user->role !== 'developer') {
             return back()->with('error', 'Only developers can permanently delete data. Please contact the developer team to have these items permanently removed.');
         }
+
 
         $validated = $request->validate([
             'ids' => ['required', 'array'],
