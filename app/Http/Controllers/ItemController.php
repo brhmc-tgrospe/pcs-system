@@ -10,16 +10,17 @@ class ItemController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'item_code'      => ['required', 'string', 'max:50', 'unique:items,item_code'],
-            'name'           => ['required', 'string', 'max:255'],
-            'description'    => ['required', 'string'],
+            'item_code' => ['required', 'string', 'max:50', 'unique:items,item_code'],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
             'specifications' => ['nullable', 'array'],
-            'unit_type'      => ['required', 'string', 'max:100'],
-            'unit_price'     => ['required', 'numeric', 'min:0'],
-            'price_referral' => ['nullable', 'string', 'max:50'],
-            'category_id'    => ['required', 'exists:categories,id'],
-            'is_active'      => ['boolean'],
-            'image_url'      => ['nullable', 'string', 'max:500'],
+            'unit_type' => ['required', 'string', 'max:100'],
+            'unit_price' => ['required', 'numeric', 'min:0'],
+            'price_referral' => ['nullable', 'array'],
+            'price_referral.*' => ['nullable', 'string', 'max:50'],
+            'category_id' => ['required', 'exists:categories,id'],
+            'is_active' => ['boolean'],
+            'image_url' => ['nullable', 'string', 'max:500'],
         ]);
 
         $item = Item::create($validated);
@@ -30,16 +31,17 @@ class ItemController extends Controller
     public function update(Request $request, Item $item): RedirectResponse
     {
         $validated = $request->validate([
-            'item_code'      => ['required', 'string', 'max:50', 'unique:items,item_code,' . $item->id],
-            'name'           => ['required', 'string', 'max:255'],
-            'description'    => ['required', 'string'],
+            'item_code' => ['required', 'string', 'max:50', 'unique:items,item_code,' . $item->id],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
             'specifications' => ['nullable', 'array'],
-            'unit_type'      => ['required', 'string', 'max:100'],
-            'unit_price'     => ['required', 'numeric', 'min:0'],
-            'price_referral' => ['nullable', 'string', 'max:50'],
-            'category_id'    => ['required', 'exists:categories,id'],
-            'is_active'      => ['boolean'],
-            'image_url'      => ['nullable', 'string', 'max:500'],
+            'unit_type' => ['required', 'string', 'max:100'],
+            'unit_price' => ['required', 'numeric', 'min:0'],
+            'price_referral' => ['nullable', 'array'],
+            'price_referral.*' => ['nullable', 'string', 'max:50'],
+            'category_id' => ['required', 'exists:categories,id'],
+            'is_active' => ['boolean'],
+            'image_url' => ['nullable', 'string', 'max:500'],
         ]);
 
         $item->update($validated);
@@ -60,6 +62,7 @@ class ItemController extends Controller
         $item->restore();
         return back()->with('success', "Item '{$item->name}' restored successfully.");
     }
+
     public function forceDelete($id): RedirectResponse
     {
         if (auth()->user()->role !== 'developer') {
@@ -75,7 +78,7 @@ class ItemController extends Controller
     public function bulkDelete(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'ids'   => ['required', 'array'],
+            'ids' => ['required', 'array'],
             'ids.*' => ['integer', 'exists:items,id'],
         ]);
 
@@ -86,7 +89,7 @@ class ItemController extends Controller
     public function bulkRestore(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'ids'   => ['required', 'array'],
+            'ids' => ['required', 'array'],
             'ids.*' => ['integer'],
         ]);
 
@@ -101,7 +104,7 @@ class ItemController extends Controller
         }
 
         $validated = $request->validate([
-            'ids'   => ['required', 'array'],
+            'ids' => ['required', 'array'],
             'ids.*' => ['integer'],
         ]);
 
@@ -109,3 +112,4 @@ class ItemController extends Controller
         return back()->with('success', "{$count} item(s) permanently deleted.");
     }
 }
+

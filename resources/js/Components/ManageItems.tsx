@@ -18,7 +18,8 @@ type ItemFormData = {
   category_id: string;
   unit_type: string;
   unit_price: string;
-  price_referral: string;
+  price_referral: string[];
+
   is_active: boolean;
   specifications: { k: string; v: string }[];
 };
@@ -48,13 +49,15 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
   }, [searchTerm, statusFilter, perPage]);
 
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<ItemFormData>({
+
     item_code: '',
     name: '',
     description: '',
     category_id: '',
     unit_type: '',
     unit_price: '',
-    price_referral: '',
+    price_referral: [''],
+
     is_active: true,
     specifications: [{ k: '', v: '' }],
   });
@@ -80,7 +83,8 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
     reset();
     setData('specifications', [{ k: '', v: '' }]);
     setData('category_id', categories[0]?.id.toString() || '');
-    setData('price_referral', '');
+    setData('price_referral', ['']);
+
     setData('is_active', true);
     setEditingItem(null);
     setIsModalOpen(true);
@@ -96,8 +100,11 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
       category_id: item.category_id.toString(),
       unit_type: item.unit_type,
       unit_price: item.unit_price.toString(),
-      price_referral: item.price_referral || '',
+      price_referral: Array.isArray(item.price_referral)
+        ? item.price_referral
+        : (item.price_referral ? [item.price_referral as any] : ['']),
       is_active: item.is_active,
+
       specifications: specsArray.length ? specsArray : [{ k: '', v: '' }],
     });
     setEditingItem(item);
@@ -113,14 +120,19 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
       if (k.trim()) specificationsObj[k.trim()] = v.trim();
     });
 
+    const priceReferrals = data.price_referral.map(r => r.trim()).filter(Boolean);
+
     const payload = {
       item_code: data.item_code,
+
+
       name: data.name,
       description: data.description,
       category_id: data.category_id,
       unit_type: data.unit_type,
       unit_price: data.unit_price,
-      price_referral: data.price_referral,
+      price_referral: priceReferrals,
+
       is_active: data.is_active,
       specifications: specificationsObj,
     };
@@ -505,13 +517,45 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
                       placeholder="e.g. 1500.00" />
                     {errors.unit_price && <p className="mt-1 text-xs text-red-600">{errors.unit_price}</p>}
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Price Referral</label>
-                    <input type="text" value={data.price_referral} onChange={e => setData('price_referral', e.target.value)}
-                      className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.price_referral ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
-                      placeholder="e.g. Lazada, DOH, Supplier" />
-                    {errors.price_referral && <p className="mt-1 text-xs text-red-600">{errors.price_referral}</p>}
+                  <div className="md:col-span-3">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Price Referrals</label>
+                    <div className="space-y-2">
+
+                      {data.price_referral.map((referral, index) => (
+                        <div key={index} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={referral}
+                            onChange={(e) => {
+                              const updated = [...data.price_referral];
+                              updated[index] = e.target.value;
+                              setData('price_referral', updated);
+                            }}
+                            className={`flex-1 px-3 py-1.5 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.price_referral ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
+                            placeholder="e.g. Lazada, DOH, Supplier"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = data.price_referral.filter((_, i) => i !== index);
+                              setData('price_referral', updated.length ? updated : ['']);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setData('price_referral', [...data.price_referral, ''])}
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium inline-flex items-center mt-2 gap-1"
+                      >
+                        <Plus className="w-4 h-4" /> Add Referral
+                      </button>
+                    </div>
                   </div>
+
                 </div>
 
                 <div className="flex items-center gap-2">

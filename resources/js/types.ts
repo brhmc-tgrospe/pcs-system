@@ -34,7 +34,8 @@ export interface Item {
   specifications: Record<string, string>;
   unit_type: string;
   unit_price: number;
-  price_referral?: string | null;
+  price_referral?: string[] | null;
+
   category_id: number;
   is_active: boolean;
   image_url?: string | null;

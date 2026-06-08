@@ -14,11 +14,14 @@ class Item extends Model
         'unit_type', 'unit_price', 'price_referral', 'category_id', 'is_active', 'image_url'
     ];
 
+
     protected $casts = [
-        'specifications' => 'array',
-        'is_active'      => 'boolean',
-        'unit_price'     => 'decimal:2',
+        'specifications'  => 'array',
+        'price_referral' => 'array',
+        'is_active'       => 'boolean',
+        'unit_price'      => 'decimal:2',
     ];
+
 
     protected static function boot()
     {

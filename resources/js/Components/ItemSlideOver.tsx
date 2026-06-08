@@ -60,12 +60,15 @@ export default function ItemSlideOver({ item, category, onClose }: ItemSlideOver
               <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Unit Type</div>
               <div className="text-lg font-bold text-slate-900 dark:text-white capitalize">{item.unit_type}</div>
             </div>
-            {item.price_referral && (
+            {Array.isArray(item.price_referral) && item.price_referral.length > 0 && (
               <div className="col-span-2 bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-                <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Price Referral</div>
-                <div className="text-base font-bold text-slate-900 dark:text-white">{item.price_referral}</div>
+                <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Price Referrals</div>
+                <div className="text-base font-bold text-slate-900 dark:text-white">
+                  {item.price_referral.join(', ')}
+                </div>
               </div>
             )}
+
           </div>
 
           {item.specifications && Object.keys(item.specifications).length > 0 && (

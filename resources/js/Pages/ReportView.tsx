@@ -77,7 +77,9 @@ export default function ReportView({ items, categories, timestamp }: ReportViewP
                       <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider w-20">Item Code</th>
                       <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider">Description & Specs</th>
                       <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider whitespace-nowrap w-24">Unit Type</th>
+                      <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider whitespace-nowrap w-24">Referral</th>
                       <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider text-right whitespace-nowrap w-28">Est. Price</th>
+
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -103,15 +105,21 @@ export default function ReportView({ items, categories, timestamp }: ReportViewP
                         <td className="py-2.5 px-2 align-top text-slate-800 font-medium text-[11px] whitespace-nowrap w-24">
                           {item.unit_type}
                         </td>
+                        <td className="py-2.5 px-2 align-top text-slate-800 text-[11px]">
+                          {Array.isArray(item.price_referral) && item.price_referral.length > 0
+                            ? item.price_referral.join(', ')
+                            : ''}
+                        </td>
                         <td className="py-2.5 px-2 align-top text-right font-bold text-slate-900 whitespace-nowrap text-xs w-28">
                           ₱{Number(item.unit_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                         </td>
+
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-slate-800 bg-slate-50 print:bg-transparent">
-                      <td colSpan={3} className="py-2 px-2 text-right font-bold text-slate-900 text-[11px] uppercase tracking-wider">
+                      <td colSpan={4} className="py-2 px-2 text-right font-bold text-slate-900 text-[11px] uppercase tracking-wider">
                         {category.name} Sub-Total:
                       </td>
                       <td className="py-2 px-2 text-right font-black text-slate-900 text-sm whitespace-nowrap">
@@ -119,6 +127,7 @@ export default function ReportView({ items, categories, timestamp }: ReportViewP
                       </td>
                     </tr>
                   </tfoot>
+
                 </table>
               </div>
             );

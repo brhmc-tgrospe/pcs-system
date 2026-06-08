@@ -200,7 +200,9 @@ export default function PrintReport({ items, categories, onBack }: PrintReportPr
                       <th className="py-2 px-3 font-bold text-slate-900">Item Code</th>
                       <th className="py-2 px-3 font-bold text-slate-900">Name & Specifications</th>
                       <th className="py-2 px-3 font-bold text-slate-900 whitespace-nowrap">Unit Type</th>
+                      <th className="py-2 px-3 font-bold text-slate-900">Referral</th>
                       <th className="py-2 px-3 font-bold text-slate-900 text-right whitespace-nowrap">Est. Price (₱)</th>
+
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -219,7 +221,13 @@ export default function PrintReport({ items, categories, onBack }: PrintReportPr
                           )}
                         </td>
                         <td className="py-4 px-3 align-top text-slate-700 font-medium">{item.unit_type}</td>
+                        <td className="py-4 px-3 align-top text-slate-700">
+                          {Array.isArray(item.price_referral) && item.price_referral.length > 0
+                            ? item.price_referral.join(', ')
+                            : ''}
+                        </td>
                         <td className="py-4 px-3 align-top text-right font-bold text-slate-900 whitespace-nowrap">₱{Number(item.unit_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+
                       </tr>
                     ))}
                   </tbody>
