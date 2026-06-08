@@ -15,7 +15,7 @@ import { CatalogAppProps, Item, Category } from '../types';
 type View = 'dashboard' | 'catalog' | 'manage_items' | 'manage_categories' | 'print_report';
 
 export default function CatalogApp() {
-  const { items, categories, recentLogs, users, auth } = usePage<CatalogAppProps>().props;
+  const { items, categories, recentLogs, users, auth } = usePage<CatalogAppProps & Record<string, unknown>>().props;
   const user = auth.user;
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -26,7 +26,7 @@ export default function CatalogApp() {
     const params = new URLSearchParams(window.location.search);
     const viewItemStr = params.get('view_item');
     if (viewItemStr) {
-      const viewItemId = parseInt(viewItemStr, 10);
+      const viewItemId = Number(viewItemStr);
       const itemToView = items.find(i => i.id === viewItemId);
       if (itemToView) {
         setViewingItem(itemToView);

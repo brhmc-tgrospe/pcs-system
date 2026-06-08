@@ -6,12 +6,13 @@ interface CatalogContextType {
   items: Item[];
   categories: Category[];
   addItem: (item: Omit<Item, 'id'>) => void;
-  updateItem: (id: string, updatedItem: Partial<Item>) => void;
-  deleteItem: (id: string) => void;
+  updateItem: (id: string | number, updatedItem: Partial<Item>) => void;
+  deleteItem: (id: string | number) => void;
   addCategory: (category: Omit<Category, 'id'>) => void;
-  updateCategory: (id: string, updatedCategory: Partial<Category>) => void;
-  deleteCategory: (id: string) => void;
+  updateCategory: (id: string | number, updatedCategory: Partial<Category>) => void;
+  deleteCategory: (id: string | number) => void;
 }
+
 
 const CatalogContext = createContext<CatalogContextType | undefined>(undefined);
 
@@ -20,29 +21,35 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>(initialCategories);
 
   const addItem = (item: Omit<Item, 'id'>) => {
-    const newItem: Item = { ...item, id: `item-${Date.now()}` };
+    const nextId = Math.max(0, ...items.map(i => i.id)) + 1;
+    const newItem: Item = { ...item, id: nextId };
     setItems(prev => [newItem, ...prev]);
   };
 
-  const updateItem = (id: string, updatedData: Partial<Item>) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, ...updatedData } : item));
+  const updateItem = (id: string | number, updatedData: Partial<Item>) => {
+    const itemId = Number(id);
+    setItems(prev => prev.map(item => item.id === itemId ? { ...item, ...updatedData } : item));
   };
 
-  const deleteItem = (id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id));
+  const deleteItem = (id: string | number) => {
+    const itemId = Number(id);
+    setItems(prev => prev.filter(item => item.id !== itemId));
   };
 
   const addCategory = (category: Omit<Category, 'id'>) => {
-    const newCategory: Category = { ...category, id: `cat-${Date.now()}` };
+    const nextId = Math.max(0, ...categories.map(c => c.id)) + 1;
+    const newCategory: Category = { ...category, id: nextId };
     setCategories(prev => [...prev, newCategory]);
   };
 
-  const updateCategory = (id: string, updatedData: Partial<Category>) => {
-    setCategories(prev => prev.map(cat => cat.id === id ? { ...cat, ...updatedData } : cat));
+  const updateCategory = (id: string | number, updatedData: Partial<Category>) => {
+    const catId = Number(id);
+    setCategories(prev => prev.map(cat => cat.id === catId ? { ...cat, ...updatedData } : cat));
   };
 
-  const deleteCategory = (id: string) => {
-    setCategories(prev => prev.filter(cat => cat.id !== id));
+  const deleteCategory = (id: string | number) => {
+    const catId = Number(id);
+    setCategories(prev => prev.filter(cat => cat.id !== catId));
     // Also archive or remove items linked to this category? (Optional for now)
   };
 
