@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "resources/js/app.{ts,tsx,js,jsx}",
+    "resources/js/Pages/**/*.{ts,tsx,js,jsx}"
+  ],
+  "duplicates": {
+    "minOccurrences": 2
+  },
+  "rules": {}
+}

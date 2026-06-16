@@ -3,6 +3,7 @@ import { router, useForm } from '@inertiajs/react';
 import { Search, Plus, Edit2, Trash2, X, Check, Eye, Filter, ArchiveRestore, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Item, Category, AuthUser } from '../types';
 import ConfirmationModal from './ConfirmationModal';
+import { useDataTable } from '../hooks/useDataTable';
 
 interface ManageItemsProps {
   items: Item[];
@@ -25,28 +26,36 @@ type ItemFormData = {
 };
 
 export default function ManageItems({ items, categories, onViewItem, user }: ManageItemsProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'archived'>('all');
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
   const [itemToRestore, setItemToRestore] = useState<Item | null>(null);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [modalConfig, setModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText: string;
-    confirmColor: 'rose' | 'emerald' | 'blue';
-    action: () => void;
-  } | null>(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(25);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter, perPage]);
+  const {
+    searchTerm, setSearchTerm,
+    statusFilter, setStatusFilter,
+    isModalOpen, setIsModalOpen,
+    selectedIds, setSelectedIds,
+    modalConfig, setModalConfig,
+    currentPage, setCurrentPage,
+    perPage, setPerPage,
+    filteredItems,
+    totalPages,
+    paginatedItems,
+    toggleSelectAll,
+    toggleSelect,
+    execAction
+  } = useDataTable(items, (item, search, status) => {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) || 
+                          item.item_code.toLowerCase().includes(search.toLowerCase());
+    
+    let matchesStatus = true;
+    if (status === 'all') matchesStatus = !item.deleted_at;
+    if (status === 'active') matchesStatus = item.is_active && !item.deleted_at;
+    if (status === 'inactive') matchesStatus = !item.is_active && !item.deleted_at;
+    if (status === 'archived') matchesStatus = !!item.deleted_at;
+    
+    return matchesSearch && matchesStatus;
+  }, 'all');
 
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<ItemFormData>({
 
@@ -62,21 +71,7 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
     specifications: [{ k: '', v: '' }],
   });
 
-  const filteredItems = items.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          item.item_code.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    let matchesStatus = true;
-    if (statusFilter === 'all') matchesStatus = !item.deleted_at;
-    if (statusFilter === 'active') matchesStatus = item.is_active && !item.deleted_at;
-    if (statusFilter === 'inactive') matchesStatus = !item.is_active && !item.deleted_at;
-    if (statusFilter === 'archived') matchesStatus = !!item.deleted_at;
-    
-    return matchesSearch && matchesStatus;
-  });
 
-  const totalPages = Math.ceil(filteredItems.length / perPage) || 1;
-  const paginatedItems = filteredItems.slice((currentPage - 1) * perPage, currentPage * perPage);
 
   const openAddModal = () => {
     clearErrors();
@@ -147,24 +142,6 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
         preserveScroll: true,
         onSuccess: () => setIsModalOpen(false),
       });
-    }
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filteredItems.length && filteredItems.length > 0) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredItems.map(i => i.id));
-    }
-  };
-
-  const toggleSelect = (id: number) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
-
-  const execAction = () => {
-    if (modalConfig) {
-      modalConfig.action();
     }
   };
 

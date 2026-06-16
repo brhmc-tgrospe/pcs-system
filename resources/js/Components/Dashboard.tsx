@@ -12,26 +12,7 @@ interface DashboardProps {
   user: AuthUser;
 }
 
-function getActionLabel(action: string): string {
-  const labels: Record<string, string> = {
-    item_created: 'Item Created',
-    item_updated: 'Item Updated',
-    item_deleted: 'Item Deleted',
-    category_created: 'Category Created',
-    category_updated: 'Category Updated',
-    category_deleted: 'Category Deleted',
-    login: 'User Login',
-    logout: 'User Logout',
-    report_printed: 'Report Printed',
-    impersonation_started: 'Impersonation Started',
-    impersonation_ended: 'Impersonation Ended',
-    user_created: 'User Created',
-    user_updated: 'User Updated',
-    user_deleted: 'User Deleted',
-  };
-  return labels[action] || action.replace(/_/g, ' ');
-}
-
+import ActivityLogItem from './ActivityLogItem';
 export default function Dashboard({ items, categories, recentLogs, onNavigate, user }: DashboardProps) {
   const [showLogsModal, setShowLogsModal] = useState(false);
   const [activeStat, setActiveStat] = useState<{ title: string; data: any[]; type: 'items' | 'categories' } | null>(null);
@@ -102,23 +83,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
             <div className="flex-1 overflow-y-auto">
               <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {recentLogs.map(log => (
-                <li key={log.id} className="px-6 py-4 flex items-start gap-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{getActionLabel(log.action)}</span>
-                      {log.user && (
-                        <span className="text-xs text-slate-400">by {log.user.username}</span>
-                      )}
-                    </div>
-                    <p className="text-sm text-slate-500 truncate">{log.description}</p>
-                  </div>
-                  <span className="text-xs text-slate-400 shrink-0">
-                    {new Date(log.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </li>
+                <ActivityLogItem key={log.id} log={log} />
               ))}
               </ul>
             </div>

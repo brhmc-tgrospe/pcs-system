@@ -9,6 +9,23 @@ interface SidebarProps {
   onNavigate: (view: string) => void;
 }
 
+function SidebarButton({ item, isActive, onNavigate }: { item: any, isActive: boolean, onNavigate: (view: string) => void }) {
+  const Icon = item.icon;
+  return (
+    <button
+      onClick={() => onNavigate(item.id)}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
+        ${isActive
+          ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20'
+          : 'text-slate-400 hover:text-white hover:bg-slate-800'
+        }`}
+    >
+      <Icon className={`w-5 h-5 ${isActive ? 'text-blue-200' : 'text-slate-500 group-hover:text-slate-300'}`} />
+      {item.label}
+    </button>
+  );
+}
+
 export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView, onNavigate }: SidebarProps) {
   const isAdmin = user.role === 'administrator' || user.role === 'developer';
   const isDev = user.role === 'developer';
@@ -50,22 +67,8 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
           <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-3">Catalog System</div>
           <nav className="space-y-1">
             {menuItems.map((item) => {
-              const Icon = item.icon;
               const isActive = currentView === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
-                    ${isActive
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                    }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-blue-200' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                  {item.label}
-                </button>
-              );
+              return <SidebarButton key={item.id} item={item} isActive={isActive} onNavigate={onNavigate} />;
             })}
           </nav>
         </div>
@@ -88,20 +91,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
                   </a>
                 );
               }
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
-                    ${isActive
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                    }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-blue-200' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                  {item.label}
-                </button>
-              );
+              return <SidebarButton key={item.id} item={item} isActive={isActive} onNavigate={onNavigate} />;
             })}
           </nav>
         </div>

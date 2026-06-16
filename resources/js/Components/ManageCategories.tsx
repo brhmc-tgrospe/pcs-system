@@ -3,6 +3,7 @@ import { router, useForm } from '@inertiajs/react';
 import { Search, Plus, Edit2, Trash2, X, Check, Filter, ArchiveRestore, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Category, AuthUser } from '../types';
 import ConfirmationModal from './ConfirmationModal';
+import { useDataTable } from '../hooks/useDataTable';
 
 interface ManageCategoriesProps {
   categories: Category[];
@@ -16,47 +17,39 @@ type CategoryFormData = {
 };
 
 export default function ManageCategories({ categories, user }: ManageCategoriesProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('active');
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [modalConfig, setModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText: string;
-    confirmColor: 'rose' | 'emerald' | 'blue';
-    action: () => void;
-  } | null>(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(25);
+  const {
+    searchTerm, setSearchTerm,
+    statusFilter, setStatusFilter,
+    isModalOpen, setIsModalOpen,
+    selectedIds, setSelectedIds,
+    modalConfig, setModalConfig,
+    currentPage, setCurrentPage,
+    perPage, setPerPage,
+    filteredItems: filteredCategories,
+    totalPages,
+    paginatedItems: paginatedCategories,
+    toggleSelectAll,
+    toggleSelect,
+    execAction
+  } = useDataTable(categories, (cat, search, status) => {
+    const matchesSearch = cat.name.toLowerCase().includes(search.toLowerCase()) ||
+                          cat.slug.toLowerCase().includes(search.toLowerCase());
+    
+    let matchesStatus = true;
+    if (status === 'active') matchesStatus = !cat.deleted_at;
+    if (status === 'archived') matchesStatus = !!cat.deleted_at;
+    if (status === 'all') matchesStatus = true;
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter, perPage]);
+    return matchesSearch && matchesStatus;
+  }, 'active');
 
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<CategoryFormData>({
     name: '',
     slug: '',
     description: '',
   });
-
-  const filteredCategories = categories.filter(cat => {
-    const matchesSearch = cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          cat.slug.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    let matchesStatus = true;
-    if (statusFilter === 'active') matchesStatus = !cat.deleted_at;
-    if (statusFilter === 'archived') matchesStatus = !!cat.deleted_at;
-    if (statusFilter === 'all') matchesStatus = true;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const totalPages = Math.ceil(filteredCategories.length / perPage) || 1;
-  const paginatedCategories = filteredCategories.slice((currentPage - 1) * perPage, currentPage * perPage);
 
   const openAddModal = () => {
     clearErrors();
@@ -94,23 +87,7 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
     }
   };
 
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filteredCategories.length && filteredCategories.length > 0) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredCategories.map(c => c.id));
-    }
-  };
 
-  const toggleSelect = (id: number) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
-
-  const execAction = () => {
-    if (modalConfig) {
-      modalConfig.action();
-    }
-  };
 
   const handleBulkDelete = () => {
     setModalConfig({
