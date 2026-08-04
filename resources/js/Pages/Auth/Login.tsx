@@ -35,8 +35,8 @@ export default function Login({ status }: LoginProps) {
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/cubes.png')" }}></div>
           <div className="relative z-10 flex flex-col items-center">
-            <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm mb-4 shadow-lg border border-white/20">
-              <PackageSearch className="w-10 h-10 text-white" />
+            <div className="mb-4">
+              <img src="/pcs-logo.png" alt="PCS Logo" className="w-16 h-16 object-contain rounded-2xl shadow-md border border-white/10" />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">PCS Portal</h1>
             <p className="text-blue-100/80 font-medium text-sm mt-1">BRHMC Procurement Catalog System</p>
