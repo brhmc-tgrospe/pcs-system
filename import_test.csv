@@ -1,0 +1,4 @@
+Category Code,Name,Description,Unit Type,Baseline Unit Cost,Quantity,Bidders
+med_supp,Surgical Mask,50 pcs per box,Box,100,1000,ABC: 90, QWE: 95
+itequip,Laptop,16GB RAM i7,Unit,50000,10,ABC: 48000, QWE: 49500
+wrong_cat,Test,Test,Test,1,1,

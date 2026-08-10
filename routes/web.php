@@ -33,6 +33,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/catalog/categories/bulk/force', [CategoryController::class, 'bulkForceDelete'])->name('categories.bulkForceDelete');
 
         // Item CRUD
+        Route::post('/catalog/items/import', [\App\Http\Controllers\ItemImportController::class, 'import'])->name('items.import');
         Route::post('/catalog/items', [ItemController::class, 'store'])->name('items.store');
         Route::put('/catalog/items/{item}', [ItemController::class, 'update'])->name('items.update');
         Route::delete('/catalog/items/{item}', [ItemController::class, 'destroy'])->name('items.destroy');

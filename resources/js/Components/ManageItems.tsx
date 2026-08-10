@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router, useForm } from '@inertiajs/react';
-import { Search, Plus, Edit2, Trash2, X, Check, Eye, Filter, ArchiveRestore, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Check, Eye, Filter, ArchiveRestore, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { Item, Category, AuthUser, Bidder } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 import { useDataTable } from '../hooks/useDataTable';
@@ -30,9 +30,12 @@ type ItemFormData = {
 };
 
 export default function ManageItems({ items, categories, bidders, onViewItem, user }: ManageItemsProps) {
+  const { flash } = usePage<any>().props;
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
   const [itemToRestore, setItemToRestore] = useState<Item | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const {
     searchTerm, setSearchTerm,
@@ -127,6 +130,31 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
         onSuccess: () => setIsModalOpen(false),
       });
     }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const formData = new FormData();
+    formData.append('csv_file', file);
+
+    router.post('/catalog/items/import', formData, {
+      preserveScroll: true,
+      onSuccess: () => {
+        setIsImporting(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      },
+      onError: () => {
+        setIsImporting(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      },
+    });
   };
 
   const handleBulkDelete = () => {
@@ -232,10 +260,48 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">Manage Items</h1>
           <p className="text-slate-500 dark:text-slate-400">Add, edit, or remove procurement items.</p>
         </div>
-        <button onClick={openAddModal} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
-          <Plus className="w-5 h-5" /> Add Item
-        </button>
+        <div className="flex items-center gap-3">
+          <input 
+            type="file" 
+            ref={fileInputRef}
+            className="hidden" 
+            accept=".csv"
+            onChange={handleFileSelect}
+          />
+          <button 
+            onClick={() => fileInputRef.current?.click()} 
+            disabled={isImporting}
+            className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-60"
+          >
+            <Upload className="w-5 h-5" /> {isImporting ? 'Importing...' : 'Import CSV'}
+          </button>
+          <button onClick={openAddModal} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
+            <Plus className="w-5 h-5" /> Add Item
+          </button>
+        </div>
       </div>
+
+      {flash?.import_errors?.length > 0 && (
+        <div className="bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 rounded-lg p-4 mb-6 shadow-sm">
+          <div className="flex items-start">
+            <div className="shrink-0">
+              <X className="h-5 w-5 text-rose-400" aria-hidden="true" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-semibold text-rose-800 dark:text-rose-300">
+                CSV Import encountered {flash.import_errors.length} error(s)
+              </h3>
+              <div className="mt-2 text-sm text-rose-700 dark:text-rose-200 max-h-40 overflow-y-auto">
+                <ul className="list-disc space-y-1 pl-5">
+                  {flash.import_errors.map((err: string, idx: number) => (
+                    <li key={idx}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm flex-1 flex flex-col overflow-hidden">
         <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row gap-4">
