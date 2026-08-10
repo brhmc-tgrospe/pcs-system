@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { router, useForm } from '@inertiajs/react';
+import { useState, useRef } from 'react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import { Search, Plus, Edit2, Trash2, X, Check, Eye, Filter, ArchiveRestore, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { Item, Category, AuthUser, Bidder } from '../types';
 import ConfirmationModal from './ConfirmationModal';
@@ -35,7 +35,7 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
   const [itemToRestore, setItemToRestore] = useState<Item | null>(null);
   const [isImporting, setIsImporting] = useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     searchTerm, setSearchTerm,
