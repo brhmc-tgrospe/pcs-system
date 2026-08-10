@@ -19,8 +19,8 @@ export interface AuthUser {
 export interface Category {
   id: number;
   name: string;
-  slug: string;
-  description?: string;
+  cat_code: string;
+  description: string | null;
   parent_id?: number | null;
   items_count?: number;
   deleted_at?: string | null;
@@ -29,6 +29,7 @@ export interface Category {
 export interface Bidder {
   id: number;
   name: string;
+  bidder_code?: string;
   contact_person: string | null;
   contact_number: string | null;
   email: string | null;

@@ -11,7 +11,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name'        => ['required', 'string', 'max:255', 'unique:categories,name'],
-            'slug'        => ['required', 'string', 'max:255', 'unique:categories,slug', 'regex:/^[a-z0-9-]+$/'],
+            'cat_code'    => ['required', 'string', 'max:255', 'unique:categories,cat_code', 'regex:/^[a-z0-9-]+$/'],
             'description' => ['nullable', 'string', 'max:1000'],
             'parent_id'   => ['nullable', 'exists:categories,id'],
         ]);
@@ -25,7 +25,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name'        => ['required', 'string', 'max:255', 'unique:categories,name,' . $category->id],
-            'slug'        => ['required', 'string', 'max:255', 'unique:categories,slug,' . $category->id, 'regex:/^[a-z0-9-]+$/'],
+            'cat_code'    => ['required', 'string', 'max:255', 'unique:categories,cat_code,' . $category->id, 'regex:/^[a-z0-9-]+$/'],
             'description' => ['nullable', 'string', 'max:1000'],
             'parent_id'   => ['nullable', 'exists:categories,id', function ($attribute, $value, $fail) use ($category) {
                 if ($value == $category->id) {

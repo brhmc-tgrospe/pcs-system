@@ -15,6 +15,7 @@ interface Bidder {
   contact_number: string | null;
   email: string | null;
   address: string | null;
+  bidder_code?: string;
 }
 
 interface BiddersProps {
@@ -28,6 +29,7 @@ type BidderFormData = {
   contact_number: string;
   email: string;
   address: string;
+  bidder_code: string;
 };
 
 export default function Bidders() {
@@ -54,6 +56,7 @@ export default function Bidders() {
     contact_number: '',
     email: '',
     address: '',
+    bidder_code: '',
   });
 
   const filteredBidders = bidders.filter(b => {
@@ -79,6 +82,7 @@ export default function Bidders() {
       contact_number: b.contact_number || '',
       email: b.email || '',
       address: b.address || '',
+      bidder_code: b.bidder_code || '',
     });
     setEditingBidder(b);
     setIsModalOpen(true);
@@ -168,6 +172,7 @@ export default function Bidders() {
                   <thead>
                     <tr className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider sticky top-0 backdrop-blur-sm z-10 border-b border-slate-200 dark:border-slate-700">
                       <th className="p-4 font-semibold w-24">ID</th>
+                      <th className="p-4 font-semibold w-32">Bidder Code</th>
                       <th className="p-4 font-semibold">Bidder Name</th>
                       <th className="p-4 font-semibold text-right">Actions</th>
                     </tr>
@@ -180,6 +185,9 @@ export default function Bidders() {
                         <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                           <td className="p-4 text-slate-500 dark:text-slate-400 font-mono">
                             #{b.id}
+                          </td>
+                          <td className="p-4 text-slate-500 dark:text-slate-400 font-mono text-sm">
+                            {b.bidder_code || '-'}
                           </td>
                           <td className="p-4">
                             <div className="font-bold text-slate-900 dark:text-slate-100">{b.name}</div>
@@ -258,6 +266,13 @@ export default function Bidders() {
                   <input required type="text" value={data.name} onChange={e => setData('name', e.target.value)}
                     className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.name ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`} />
                   {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Bidder Code</label>
+                  <input required type="text" value={data.bidder_code} onChange={e => setData('bidder_code', e.target.value)}
+                    className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white font-mono text-sm ${errors.bidder_code ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
+                    placeholder="e.g. BDR-123" />
+                  {errors.bidder_code && <p className="mt-1 text-xs text-red-600">{errors.bidder_code}</p>}
                 </div>
                 {/* Contact details hidden for now as per requirements */}
                 <div className="hidden">

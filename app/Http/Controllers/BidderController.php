@@ -22,6 +22,7 @@ class BidderController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'bidder_code' => ['required', 'string', 'max:255', 'unique:bidders,bidder_code'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'contact_number' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -37,6 +38,7 @@ class BidderController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'bidder_code' => ['required', 'string', 'max:255', 'unique:bidders,bidder_code,' . $bidder->id],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'contact_number' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],

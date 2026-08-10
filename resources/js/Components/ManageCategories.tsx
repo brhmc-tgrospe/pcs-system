@@ -12,7 +12,7 @@ interface ManageCategoriesProps {
 
 type CategoryFormData = {
   name: string;
-  slug: string;
+  cat_code: string;
   description: string;
 };
 
@@ -35,7 +35,7 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
     execAction
   } = useDataTable(categories, (cat, search, status) => {
     const matchesSearch = cat.name.toLowerCase().includes(search.toLowerCase()) ||
-                          cat.slug.toLowerCase().includes(search.toLowerCase());
+                          cat.cat_code.toLowerCase().includes(search.toLowerCase());
     
     let matchesStatus = true;
     if (status === 'active') matchesStatus = !cat.deleted_at;
@@ -47,7 +47,7 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
 
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<CategoryFormData>({
     name: '',
-    slug: '',
+    cat_code: '',
     description: '',
   });
 
@@ -60,7 +60,7 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
 
   const openEditModal = (cat: Category) => {
     clearErrors();
-    setData({ name: cat.name, slug: cat.slug, description: cat.description || '' });
+    setData({ name: cat.name, cat_code: cat.cat_code, description: cat.description || '' });
     setEditingCategory(cat);
     setIsModalOpen(true);
   };
@@ -251,7 +251,7 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
                     className="rounded border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-blue-600 focus:ring-blue-500" />
                 </th>
                 <th className="p-4 font-semibold border-b border-slate-200 dark:border-slate-800">Name</th>
-                <th className="p-4 font-semibold border-b border-slate-200 dark:border-slate-800">Slug</th>
+                <th className="p-4 font-semibold border-b border-slate-200 dark:border-slate-800">Category Code</th>
                 <th className="p-4 font-semibold border-b border-slate-200 dark:border-slate-800">Description</th>
                 <th className="p-4 font-semibold border-b border-slate-200 dark:border-slate-800">Items</th>
                 <th className="p-4 font-semibold border-b border-slate-200 dark:border-slate-800 text-right">Actions</th>
@@ -270,7 +270,7 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
                         className="rounded border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-blue-600 focus:ring-blue-500" />
                     </td>
                     <td className="p-4 font-medium text-slate-900 dark:text-slate-100">{cat.name}</td>
-                    <td className="p-4 text-slate-500 dark:text-slate-400 font-mono text-sm">{cat.slug}</td>
+                    <td className="p-4 text-slate-500 dark:text-slate-400 font-mono text-sm">{cat.cat_code}</td>
                     <td className="p-4 text-slate-600 dark:text-slate-400 text-sm truncate max-w-xs">{cat.description || '-'}</td>
                     <td className="p-4 text-sm">
                       <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded text-xs font-medium">{cat.items_count ?? 0} items</span>
@@ -360,7 +360,7 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
                     onChange={e => {
                       setData('name', e.target.value);
                       if (!editingCategory) {
-                        setData('slug', e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''));
+                        setData('cat_code', e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''));
                       }
                     }}
                     className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder:text-slate-400 ${errors.name ? 'border-red-400' : 'border-slate-200 dark:border-slate-700'}`}
@@ -368,11 +368,11 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
                   {errors.name && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.name}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Slug</label>
-                  <input required type="text" value={data.slug} onChange={e => setData('slug', e.target.value)}
-                    className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-sm ${errors.slug ? 'border-red-400' : 'border-slate-200 dark:border-slate-700'}`}
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Category Code</label>
+                  <input required type="text" value={data.cat_code} onChange={e => setData('cat_code', e.target.value)}
+                    className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-sm ${errors.cat_code ? 'border-red-400' : 'border-slate-200 dark:border-slate-700'}`}
                     placeholder="e.g. laboratory-equipment" />
-                  {errors.slug && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.slug}</p>}
+                  {errors.cat_code && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.cat_code}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Description</label>
