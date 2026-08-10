@@ -24,7 +24,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
   const stats = [
     { label: 'Total Catalog Items', value: activeItems.length.toString(), icon: Boxes, color: 'text-blue-600', bg: 'bg-blue-100', rawData: activeItems, type: 'items' as const },
     { label: 'Active Categories', value: activeCategories.length.toString(), icon: Tags, color: 'text-indigo-600', bg: 'bg-indigo-100', rawData: activeCategories, type: 'categories' as const },
-    { label: 'Active Items', value: activeItems.filter(i => i.is_active).length.toString(), icon: PackageSearch, color: 'text-emerald-600', bg: 'bg-emerald-100', rawData: activeItems.filter(i => i.is_active), type: 'items' as const },
+    { label: 'Total Catalog Value', value: '₱' + activeItems.reduce((sum, item) => sum + (Number(item.abc) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 2 }), icon: PackageSearch, color: 'text-emerald-600', bg: 'bg-emerald-100', rawData: activeItems, type: 'items' as const },
     { label: 'Archived Items', value: archivedItems.length.toString(), icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-100', rawData: archivedItems, type: 'items' as const },
   ];
 

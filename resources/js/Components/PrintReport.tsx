@@ -10,7 +10,7 @@ interface PrintReportProps {
 }
 
 export default function PrintReport({ items, categories, onBack }: PrintReportProps) {
-  const activeItems = useMemo(() => items.filter(item => item.is_active), [items]);
+  const activeItems = useMemo(() => items.filter(item => !item.deleted_at), [items]);
 
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<number>>(new Set());
@@ -198,10 +198,11 @@ export default function PrintReport({ items, categories, onBack }: PrintReportPr
                   <thead>
                     <tr className="border-b-2 border-slate-800">
                       <th className="py-2 px-3 font-bold text-slate-900">Item Code</th>
-                      <th className="py-2 px-3 font-bold text-slate-900">Name & Specifications</th>
+                      <th className="py-2 px-3 font-bold text-slate-900">Name & Description</th>
                       <th className="py-2 px-3 font-bold text-slate-900 whitespace-nowrap">Unit Type</th>
-                      <th className="py-2 px-3 font-bold text-slate-900">Referral</th>
-                      <th className="py-2 px-3 font-bold text-slate-900 text-right whitespace-nowrap">Est. Price (₱)</th>
+                      <th className="py-2 px-3 font-bold text-slate-900 whitespace-nowrap text-right">Unit Cost (₱)</th>
+                      <th className="py-2 px-3 font-bold text-slate-900 text-right">Quantity</th>
+                      <th className="py-2 px-3 font-bold text-slate-900 text-right whitespace-nowrap">ABC (₱)</th>
 
                     </tr>
                   </thead>
@@ -212,21 +213,11 @@ export default function PrintReport({ items, categories, onBack }: PrintReportPr
                         <td className="py-4 px-3 align-top">
                           <div className="font-bold text-slate-900 text-base">{item.name}</div>
                           <div className="text-slate-600 text-sm mt-1 mb-2 leading-relaxed">{item.description}</div>
-                          {item.specifications && Object.keys(item.specifications).length > 0 && (
-                            <div className="mt-2 text-xs text-slate-600 bg-slate-50 p-2 rounded print:bg-transparent print:p-0 border border-slate-100 grid grid-cols-2 gap-x-4 gap-y-1">
-                              {Object.entries(item.specifications).map(([k, v]) => (
-                                <div key={k}><span className="font-semibold">{k}:</span> {v}</div>
-                              ))}
-                            </div>
-                          )}
                         </td>
                         <td className="py-4 px-3 align-top text-slate-700 font-medium">{item.unit_type}</td>
-                        <td className="py-4 px-3 align-top text-slate-700">
-                          {Array.isArray(item.price_referral) && item.price_referral.length > 0
-                            ? item.price_referral.join(', ')
-                            : ''}
-                        </td>
-                        <td className="py-4 px-3 align-top text-right font-bold text-slate-900 whitespace-nowrap">₱{Number(item.unit_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                        <td className="py-4 px-3 align-top text-right font-medium text-slate-900 whitespace-nowrap">₱{Number(item.unit_cost).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                        <td className="py-4 px-3 align-top text-right font-medium text-slate-900">{item.quantity}</td>
+                        <td className="py-4 px-3 align-top text-right font-bold text-slate-900 whitespace-nowrap">₱{Number(item.abc).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
 
                       </tr>
                     ))}

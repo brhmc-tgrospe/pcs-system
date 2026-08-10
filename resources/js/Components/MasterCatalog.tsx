@@ -26,7 +26,7 @@ export default function MasterCatalog({ items, categories, onViewItem, onNavigat
         item.item_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesCategory = selectedCategory === 'all' || item.category_id === Number(selectedCategory);
-      return matchesSearch && matchesCategory && item.is_active;
+      return matchesSearch && matchesCategory && !item.deleted_at;
     });
   }, [searchTerm, selectedCategory, items]);
 
@@ -93,7 +93,7 @@ export default function MasterCatalog({ items, categories, onViewItem, onNavigat
                   <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name</th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Category</th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">Description</th>
-                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unit Price</th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unit Cost</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
@@ -120,7 +120,7 @@ export default function MasterCatalog({ items, categories, onViewItem, onNavigat
                         {item.description}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-slate-900 dark:text-slate-100">
-                        ₱{Number(item.unit_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        ₱{Number(item.unit_cost).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-slate-500 ml-1">/ {item.unit_type.toLowerCase()}</span>
                       </td>
                     </tr>

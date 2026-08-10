@@ -1,4 +1,4 @@
-import { LayoutDashboard, BookOpen, Settings, Boxes, Tags, FileBarChart, Users } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Settings, Boxes, Tags, FileBarChart, Users, Building } from 'lucide-react';
 import { AuthUser } from '../types';
 
 interface SidebarProps {
@@ -36,6 +36,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
     ...(isAdmin ? [
       { id: 'manage_items', label: 'Manage Items', icon: Boxes },
       { id: 'manage_categories', label: 'Categories', icon: Tags },
+      { id: 'bidders', label: 'Bidders', icon: Building, href: '/catalog/bidders' },
     ] : []),
   ];
 
@@ -65,7 +66,20 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
           <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-3">Catalog System</div>
           <nav className="space-y-1">
             {menuItems.map((item) => {
+              const Icon = item.icon;
               const isActive = currentView === item.id;
+              if (item.href) {
+                return (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group text-slate-400 hover:text-white hover:bg-slate-800"
+                  >
+                    <Icon className="w-5 h-5 text-slate-500 group-hover:text-slate-300" />
+                    {item.label}
+                  </a>
+                );
+              }
               return <SidebarButton key={item.id} item={item} isActive={isActive} onNavigate={onNavigate} />;
             })}
           </nav>

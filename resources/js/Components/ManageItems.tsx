@@ -1,16 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { router, useForm } from '@inertiajs/react';
 import { Search, Plus, Edit2, Trash2, X, Check, Eye, Filter, ArchiveRestore, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Item, Category, AuthUser } from '../types';
+import { Item, Category, AuthUser, Bidder } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 import { useDataTable } from '../hooks/useDataTable';
 
 interface ManageItemsProps {
   items: Item[];
   categories: Category[];
+  bidders: Bidder[];
   onViewItem: (item: Item) => void;
   user: AuthUser;
 }
+
+type BidderInput = {
+  id: string;
+  unit_cost: string;
+};
 
 type ItemFormData = {
   item_code: string;
@@ -18,14 +24,12 @@ type ItemFormData = {
   description: string;
   category_id: string;
   unit_type: string;
-  unit_price: string;
-  price_referral: string[];
-
-  is_active: boolean;
-  specifications: { k: string; v: string }[];
+  unit_cost: string;
+  quantity: string;
+  bidders: BidderInput[];
 };
 
-export default function ManageItems({ items, categories, onViewItem, user }: ManageItemsProps) {
+export default function ManageItems({ items, categories, bidders, onViewItem, user }: ManageItemsProps) {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
   const [itemToRestore, setItemToRestore] = useState<Item | null>(null);
@@ -50,57 +54,47 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
     
     let matchesStatus = true;
     if (status === 'all') matchesStatus = !item.deleted_at;
-    if (status === 'active') matchesStatus = item.is_active && !item.deleted_at;
-    if (status === 'inactive') matchesStatus = !item.is_active && !item.deleted_at;
+    if (status === 'active') matchesStatus = !item.deleted_at;
     if (status === 'archived') matchesStatus = !!item.deleted_at;
     
     return matchesSearch && matchesStatus;
   }, 'all');
 
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<ItemFormData>({
-
     item_code: '',
     name: '',
     description: '',
     category_id: '',
     unit_type: '',
-    unit_price: '',
-    price_referral: [''],
-
-    is_active: true,
-    specifications: [{ k: '', v: '' }],
+    unit_cost: '',
+    quantity: '1',
+    bidders: [],
   });
-
-
 
   const openAddModal = () => {
     clearErrors();
     reset();
-    setData('specifications', [{ k: '', v: '' }]);
     setData('category_id', categories[0]?.id.toString() || '');
-    setData('price_referral', ['']);
-
-    setData('is_active', true);
+    setData('quantity', '1');
+    setData('bidders', []);
     setEditingItem(null);
     setIsModalOpen(true);
   };
 
   const openEditModal = (item: Item) => {
     clearErrors();
-    const specsArray = Object.entries(item.specifications || {}).map(([k, v]) => ({ k, v }));
     setData({
       item_code: item.item_code,
       name: item.name,
       description: item.description || '',
       category_id: item.category_id.toString(),
       unit_type: item.unit_type,
-      unit_price: item.unit_price.toString(),
-      price_referral: Array.isArray(item.price_referral)
-        ? item.price_referral
-        : (item.price_referral ? [item.price_referral as any] : ['']),
-      is_active: item.is_active,
-
-      specifications: specsArray.length ? specsArray : [{ k: '', v: '' }],
+      unit_cost: item.unit_cost.toString(),
+      quantity: item.quantity.toString(),
+      bidders: item.bidders ? item.bidders.map(b => ({
+        id: b.id.toString(),
+        unit_cost: b.pivot?.unit_cost.toString() || '0'
+      })) : [],
     });
     setEditingItem(item);
     setIsModalOpen(true);
@@ -109,27 +103,17 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Build specifications object
-    const specificationsObj: Record<string, string> = {};
-    data.specifications.forEach(({ k, v }) => {
-      if (k.trim()) specificationsObj[k.trim()] = v.trim();
-    });
-
-    const priceReferrals = data.price_referral.map(r => r.trim()).filter(Boolean);
-
     const payload = {
-      item_code: data.item_code,
-
-
       name: data.name,
       description: data.description,
       category_id: data.category_id,
       unit_type: data.unit_type,
-      unit_price: data.unit_price,
-      price_referral: priceReferrals,
-
-      is_active: data.is_active,
-      specifications: specificationsObj,
+      unit_cost: data.unit_cost,
+      quantity: data.quantity,
+      bidders: data.bidders.filter(b => b.id).map(b => ({
+        id: b.id,
+        unit_cost: b.unit_cost
+      })),
     };
 
     if (editingItem) {
@@ -213,7 +197,7 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
     setModalConfig({
       isOpen: true,
       title: 'Restore Item',
-      message: `Are you sure you want to restore "${item.name}"? It will become active again.`,
+      message: `Are you sure you want to restore "${item.name}"?`,
       confirmText: 'Restore',
       confirmColor: 'emerald',
       action: () => {
@@ -239,17 +223,6 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
         });
       }
     });
-  };
-
-  const updateSpec = (index: number, field: 'k' | 'v', value: string) => {
-    const updated = [...data.specifications];
-    updated[index][field] = value;
-    setData('specifications', updated);
-  };
-
-  const removeSpec = (index: number) => {
-    const updated = data.specifications.filter((_, i) => i !== index);
-    setData('specifications', updated.length ? updated : [{ k: '', v: '' }]);
   };
 
   return (
@@ -285,7 +258,6 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
             >
               <option value="all">All Items</option>
               <option value="active">Active Items</option>
-              <option value="inactive">Inactive Items</option>
               <option value="archived">Deleted (Archived)</option>
             </select>
           </div>
@@ -326,14 +298,16 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
                 <th className="p-4 font-semibold">Code</th>
                 <th className="p-4 font-semibold">Name</th>
                 <th className="p-4 font-semibold">Category</th>
-                <th className="p-4 font-semibold">Price</th>
+                <th className="p-4 font-semibold">Unit Cost</th>
+                <th className="p-4 font-semibold">Quantity</th>
+                <th className="p-4 font-semibold">ABC</th>
                 <th className="p-4 font-semibold">Status</th>
                 <th className="p-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {paginatedItems.length === 0 ? (
-                <tr><td colSpan={6} className="p-8 text-center text-slate-500 dark:text-slate-400">No items found.</td></tr>
+                <tr><td colSpan={9} className="p-8 text-center text-slate-500 dark:text-slate-400">No items found.</td></tr>
               ) : (
                 paginatedItems.map(item => {
                   const cat = categories.find(c => c.id === item.category_id);
@@ -351,10 +325,16 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
                         <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs">{cat?.name || 'Unknown'}</span>
                       </td>
                       <td className="p-4 text-slate-900 dark:text-slate-100 font-semibold text-sm">
-                        ₱{Number(item.unit_price).toLocaleString()} <span className="text-slate-400 dark:text-slate-500 font-normal">/{item.unit_type}</span>
+                        ₱{Number(item.unit_cost).toLocaleString()} <span className="text-slate-400 dark:text-slate-500 font-normal">/{item.unit_type}</span>
+                      </td>
+                      <td className="p-4 text-slate-900 dark:text-slate-100 font-semibold text-sm">
+                        {item.quantity}
+                      </td>
+                      <td className="p-4 text-slate-900 dark:text-slate-100 font-bold text-sm">
+                        ₱{Number(item.abc).toLocaleString()}
                       </td>
                       <td className="p-4">
-                        {item.is_active ? (
+                        {!item.deleted_at ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">Active</span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300">Archived</span>
@@ -445,14 +425,15 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
             <div className="overflow-y-auto flex-1 p-6">
               <form id="item-form" onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Item Code</label>
-                    <input required type="text" value={data.item_code} onChange={e => setData('item_code', e.target.value)}
-                      className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm dark:text-white ${errors.item_code ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
-                      placeholder="e.g. IT-102" />
-                    {errors.item_code && <p className="mt-1 text-xs text-red-600">{errors.item_code}</p>}
-                  </div>
-                  <div>
+                  {editingItem && (
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Item Code</label>
+                      <input disabled type="text" value={data.item_code}
+                        className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none font-mono text-sm dark:text-slate-400 cursor-not-allowed"
+                        placeholder="Auto-generated" />
+                    </div>
+                  )}
+                  <div className={!editingItem ? 'md:col-span-2' : ''}>
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Category</label>
                     <select required value={data.category_id} onChange={e => setData('category_id', e.target.value)}
                       className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm dark:text-white ${errors.category_id ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}>
@@ -474,7 +455,7 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Description</label>
                   <textarea required value={data.description} onChange={e => setData('description', e.target.value)}
-                    rows={3} className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.description ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
+                    rows={5} className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.description ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
                     placeholder="Item description" />
                   {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
                 </div>
@@ -484,80 +465,80 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Unit Type</label>
                     <input required type="text" value={data.unit_type} onChange={e => setData('unit_type', e.target.value)}
                       className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.unit_type ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
-                      placeholder="e.g. Box of 50, Piece" />
+                      placeholder="e.g. Box, Piece" />
                     {errors.unit_type && <p className="mt-1 text-xs text-red-600">{errors.unit_type}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Unit Price (₱)</label>
-                    <input required type="number" step="0.01" min="0" value={data.unit_price} onChange={e => setData('unit_price', e.target.value)}
-                      className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.unit_price ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Baseline Unit Cost (₱)</label>
+                    <input required type="number" step="0.01" min="0" value={data.unit_cost} onChange={e => setData('unit_cost', e.target.value)}
+                      className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.unit_cost ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
                       placeholder="e.g. 1500.00" />
-                    {errors.unit_price && <p className="mt-1 text-xs text-red-600">{errors.unit_price}</p>}
+                    {errors.unit_cost && <p className="mt-1 text-xs text-red-600">{errors.unit_cost}</p>}
                   </div>
-                  <div className="md:col-span-3">
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Price Referrals</label>
-                    <div className="space-y-2">
-
-                      {data.price_referral.map((referral, index) => (
-                        <div key={index} className="flex gap-2">
-                          <input
-                            type="text"
-                            value={referral}
-                            onChange={(e) => {
-                              const updated = [...data.price_referral];
-                              updated[index] = e.target.value;
-                              setData('price_referral', updated);
-                            }}
-                            className={`flex-1 px-3 py-1.5 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.price_referral ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
-                            placeholder="e.g. Lazada, DOH, Supplier"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = data.price_referral.filter((_, i) => i !== index);
-                              setData('price_referral', updated.length ? updated : ['']);
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => setData('price_referral', [...data.price_referral, ''])}
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium inline-flex items-center mt-2 gap-1"
-                      >
-                        <Plus className="w-4 h-4" /> Add Referral
-                      </button>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Quantity</label>
+                    <input required type="number" min="1" value={data.quantity} onChange={e => setData('quantity', e.target.value)}
+                      className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.quantity ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
+                      placeholder="e.g. 100" />
+                    {errors.quantity && <p className="mt-1 text-xs text-red-600">{errors.quantity}</p>}
                   </div>
-
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="is_active" checked={data.is_active} onChange={e => setData('is_active', e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-blue-500" />
-                  <label htmlFor="is_active" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Active in Catalog</label>
+                
+                <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-800/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Calculated ABC:</span>
+                    <span className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                      ₱{(Number(data.unit_cost || 0) * Number(data.quantity || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Specifications</label>
-                  <div className="space-y-2">
-                    {data.specifications.map((spec, index) => (
-                      <div key={index} className="flex gap-2">
-                        <input type="text" value={spec.k} onChange={e => updateSpec(index, 'k', e.target.value)}
-                          className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:text-white dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Key (e.g. Resolution)" />
-                        <input type="text" value={spec.v} onChange={e => updateSpec(index, 'v', e.target.value)}
-                          className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:text-white dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Value (e.g. 1080p)" />
-                        <button type="button" onClick={() => removeSpec(index)} className="p-1.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Bidders</label>
+                  <p className="text-xs text-slate-500 mb-3">Select bidders and specify their respective unit costs for this item.</p>
+                  
+                  <div className="space-y-3">
+                    {data.bidders.map((bidderInput, index) => (
+                      <div key={index} className="flex gap-2 items-start">
+                        <div className="flex-1">
+                          <select required value={bidderInput.id} onChange={e => {
+                              const updated = [...data.bidders];
+                              updated[index].id = e.target.value;
+                              setData('bidders', updated);
+                            }}
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="" disabled>Select Bidder</option>
+                            {bidders.map(b => (
+                              <option key={b.id} value={b.id.toString()}>{b.name}</option>
+                            ))}
+                          </select>
+                          {(errors as any)[`bidders.${index}.id`] && <p className="mt-1 text-xs text-red-600">{(errors as any)[`bidders.${index}.id`]}</p>}
+                        </div>
+                        
+                        <div className="w-1/3">
+                          <input required type="number" step="0.01" min="0" value={bidderInput.unit_cost} onChange={e => {
+                              const updated = [...data.bidders];
+                              updated[index].unit_cost = e.target.value;
+                              setData('bidders', updated);
+                            }}
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                            placeholder="Bidder's Unit Cost" />
+                          {(errors as any)[`bidders.${index}.unit_cost`] && <p className="mt-1 text-xs text-red-600">{(errors as any)[`bidders.${index}.unit_cost`]}</p>}
+                        </div>
+                        
+                        <button type="button" onClick={() => {
+                            const updated = data.bidders.filter((_, i) => i !== index);
+                            setData('bidders', updated);
+                          }} 
+                          className="p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors mt-0.5">
                           <X className="w-5 h-5" />
                         </button>
                       </div>
                     ))}
-                    <button type="button" onClick={() => setData('specifications', [...data.specifications, { k: '', v: '' }])}
+                    
+                    <button type="button" onClick={() => setData('bidders', [...data.bidders, { id: '', unit_cost: '' }])}
                       className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium inline-flex items-center mt-2 gap-1">
-                      <Plus className="w-4 h-4" /> Add Specification
+                      <Plus className="w-4 h-4" /> Add Bidder
                     </button>
                   </div>
                 </div>

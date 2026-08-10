@@ -26,20 +26,33 @@ export interface Category {
   deleted_at?: string | null;
 }
 
+export interface Bidder {
+  id: number;
+  name: string;
+  contact_person: string | null;
+  contact_number: string | null;
+  email: string | null;
+  address: string | null;
+  pivot?: {
+    unit_cost: number;
+  };
+  deleted_at?: string | null;
+}
+
 export interface Item {
   id: number;
   item_code: string;
   name: string;
   description: string;
-  specifications: Record<string, string>;
   unit_type: string;
-  unit_price: number;
-  price_referral?: string[] | null;
+  unit_cost: number;
+  quantity: number;
+  abc: number;
 
   category_id: number;
-  is_active: boolean;
   image_url?: string | null;
   category?: Category;
+  bidders?: Bidder[];
   deleted_at?: string | null;
 }
 
@@ -80,6 +93,7 @@ export interface LaravelPagination<T> {
 export interface CatalogAppProps {
   items: Item[];
   categories: Category[];
+  bidders: Bidder[];
   recentLogs: ActivityLogEntry[];
   users?: UserSummary[];
   auth: { user: AuthUser };

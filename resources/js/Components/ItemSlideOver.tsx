@@ -1,4 +1,4 @@
-import { X, Box, Tag, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Box, Tag, FileText, CheckCircle2, AlertCircle, Users } from 'lucide-react';
 import { Item, Category } from '../types';
 
 interface ItemSlideOverProps {
@@ -32,7 +32,7 @@ export default function ItemSlideOver({ item, category, onClose }: ItemSlideOver
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-3">
-              {item.is_active ? (
+              {!item.deleted_at ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Active in Catalog
                 </span>
@@ -53,36 +53,37 @@ export default function ItemSlideOver({ item, category, onClose }: ItemSlideOver
 
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Unit Price</div>
-              <div className="text-xl font-bold text-slate-900 dark:text-white">₱{Number(item.unit_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</div>
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Baseline Unit Cost</div>
+              <div className="text-xl font-bold text-slate-900 dark:text-white">₱{Number(item.unit_cost).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</div>
             </div>
             <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
               <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Unit Type</div>
               <div className="text-lg font-bold text-slate-900 dark:text-white capitalize">{item.unit_type}</div>
             </div>
-            {Array.isArray(item.price_referral) && item.price_referral.length > 0 && (
-              <div className="col-span-2 bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-                <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Price Referrals</div>
-                <div className="text-base font-bold text-slate-900 dark:text-white">
-                  {item.price_referral.join(', ')}
-                </div>
-              </div>
-            )}
-
+            <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Quantity</div>
+              <div className="text-xl font-bold text-slate-900 dark:text-white">{item.quantity}</div>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">ABC (Total)</div>
+              <div className="text-xl font-bold text-blue-700 dark:text-blue-400">₱{Number(item.abc).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</div>
+            </div>
           </div>
 
-          {item.specifications && Object.keys(item.specifications).length > 0 && (
+          {item.bidders && item.bidders.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-slate-400" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Technical Specifications</h3>
+                <Users className="w-5 h-5 text-slate-400" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Bidders</h3>
               </div>
               <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
                 <dl className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {Object.entries(item.specifications).map(([key, value]) => (
-                    <div key={key} className="grid grid-cols-3 gap-4 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                      <dt className="text-sm font-semibold text-slate-500 dark:text-slate-400">{key}</dt>
-                      <dd className="text-sm text-slate-900 dark:text-slate-100 col-span-2 font-medium">{value}</dd>
+                  {item.bidders.map((bidder) => (
+                    <div key={bidder.id} className="grid grid-cols-3 gap-4 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors items-center">
+                      <dt className="text-sm font-semibold text-slate-900 dark:text-slate-100 col-span-2">{bidder.name}</dt>
+                      <dd className="text-sm text-slate-500 dark:text-slate-400 font-medium text-right">
+                        ₱{Number(bidder.pivot?.unit_cost || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </dd>
                     </div>
                   ))}
                 </dl>

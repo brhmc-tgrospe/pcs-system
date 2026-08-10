@@ -56,6 +56,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // Bidders Management
+        Route::get('/catalog/bidders', [\App\Http\Controllers\BidderController::class, 'index'])->name('bidders.index');
+        Route::post('/catalog/bidders', [\App\Http\Controllers\BidderController::class, 'store'])->name('bidders.store');
+        Route::put('/catalog/bidders/{bidder}', [\App\Http\Controllers\BidderController::class, 'update'])->name('bidders.update');
+        Route::delete('/catalog/bidders/{bidder}', [\App\Http\Controllers\BidderController::class, 'destroy'])->name('bidders.destroy');
+        Route::post('/catalog/bidders/{id}/restore', [\App\Http\Controllers\BidderController::class, 'restore'])->name('bidders.restore');
     });
 
     Route::middleware(['role:developer'])->group(function () {

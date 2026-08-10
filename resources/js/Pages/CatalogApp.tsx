@@ -15,7 +15,7 @@ import { CatalogAppProps, Item, Category } from '../types';
 type View = 'dashboard' | 'catalog' | 'manage_items' | 'manage_categories' | 'print_report';
 
 export default function CatalogApp() {
-  const { items, categories, recentLogs, users, auth } = usePage<CatalogAppProps & Record<string, unknown>>().props;
+  const { items, categories, bidders, recentLogs, users, auth } = usePage<CatalogAppProps & Record<string, unknown>>().props;
   const user = auth.user;
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -96,6 +96,7 @@ export default function CatalogApp() {
             <ManageItems
               items={items}
               categories={categories}
+              bidders={bidders}
               onViewItem={setViewingItem}
               user={user}
             />

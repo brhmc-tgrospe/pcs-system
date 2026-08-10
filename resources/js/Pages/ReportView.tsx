@@ -10,7 +10,7 @@ interface ReportViewProps {
 
 export default function ReportView({ items, categories, timestamp }: ReportViewProps) {
   // Calculate overall grand total
-  const grandTotal = items.reduce((sum, item) => sum + Number(item.unit_price), 0);
+  const grandTotal = items.reduce((sum, item) => sum + Number(item.abc), 0);
 
   return (
     <div className="min-h-screen bg-slate-100 py-8 print:py-0 print:bg-white font-sans text-slate-900" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
@@ -59,7 +59,7 @@ export default function ReportView({ items, categories, timestamp }: ReportViewP
             const categoryItems = items.filter(item => item.category_id === category.id);
             if (categoryItems.length === 0) return null;
             
-            const categorySubTotal = categoryItems.reduce((sum, item) => sum + Number(item.unit_price), 0);
+            const categorySubTotal = categoryItems.reduce((sum, item) => sum + Number(item.abc), 0);
             
             return (
               <div key={category.id} className="break-inside-avoid">
@@ -75,11 +75,11 @@ export default function ReportView({ items, categories, timestamp }: ReportViewP
                   <thead>
                     <tr className="border-y-2 border-slate-800 bg-slate-50 print:bg-transparent">
                       <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider w-20">Item Code</th>
-                      <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider">Description & Specs</th>
+                      <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider">Description</th>
                       <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider whitespace-nowrap w-24">Unit Type</th>
-                      <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider whitespace-nowrap w-24">Referral</th>
-                      <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider text-right whitespace-nowrap w-28">Est. Price</th>
-
+                      <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider text-right whitespace-nowrap w-24">Unit Cost</th>
+                      <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider text-right whitespace-nowrap w-20">Quantity</th>
+                      <th className="py-2 px-2 font-bold text-slate-900 text-[11px] uppercase tracking-wider text-right whitespace-nowrap w-28">ABC</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -91,35 +91,25 @@ export default function ReportView({ items, categories, timestamp }: ReportViewP
                         <td className="py-2.5 px-2 align-top">
                           <div className="font-bold text-slate-900 text-xs mb-0.5">{item.name}</div>
                           {item.description && <div className="text-slate-600 text-[11px] mb-1.5 leading-snug max-w-2xl">{item.description}</div>}
-                          {item.specifications && Object.keys(item.specifications).length > 0 && (
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[11px] bg-slate-50/50 p-1.5 rounded border border-slate-200 print:border-slate-300 print:bg-transparent">
-                              {Object.entries(item.specifications).map(([k, v]) => (
-                                <div key={k} className="flex gap-1 items-baseline">
-                                  <span className="font-semibold text-slate-400 uppercase tracking-tight text-[9px]">{k}:</span>
-                                  <span className="font-medium text-slate-800">{v}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
                         </td>
                         <td className="py-2.5 px-2 align-top text-slate-800 font-medium text-[11px] whitespace-nowrap w-24">
                           {item.unit_type}
                         </td>
-                        <td className="py-2.5 px-2 align-top text-slate-800 text-[11px]">
-                          {Array.isArray(item.price_referral) && item.price_referral.length > 0
-                            ? item.price_referral.join(', ')
-                            : ''}
+                        <td className="py-2.5 px-2 align-top text-right text-slate-800 text-[11px]">
+                          ₱{Number(item.unit_cost).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-2.5 px-2 align-top text-right text-slate-800 text-[11px]">
+                          {item.quantity}
                         </td>
                         <td className="py-2.5 px-2 align-top text-right font-bold text-slate-900 whitespace-nowrap text-xs w-28">
-                          ₱{Number(item.unit_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                          ₱{Number(item.abc).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                         </td>
-
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-slate-800 bg-slate-50 print:bg-transparent">
-                      <td colSpan={4} className="py-2 px-2 text-right font-bold text-slate-900 text-[11px] uppercase tracking-wider">
+                      <td colSpan={5} className="py-2 px-2 text-right font-bold text-slate-900 text-[11px] uppercase tracking-wider">
                         {category.name} Sub-Total:
                       </td>
                       <td className="py-2 px-2 text-right font-black text-slate-900 text-sm whitespace-nowrap">
@@ -127,7 +117,6 @@ export default function ReportView({ items, categories, timestamp }: ReportViewP
                       </td>
                     </tr>
                   </tfoot>
-
                 </table>
               </div>
             );

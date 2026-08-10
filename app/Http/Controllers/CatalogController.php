@@ -15,8 +15,9 @@ class CatalogController extends Controller
     {
         $user = Auth::user();
 
-        $items = Item::withTrashed()->with('category')->orderBy('item_code')->get();
+        $items = Item::withTrashed()->with(['category', 'bidders' => function($q) { $q->withTrashed(); }])->orderBy('item_code')->get();
         $categories = Category::withTrashed()->withCount('items')->orderBy('name')->get();
+        $bidders = \App\Models\Bidder::orderBy('name')->get();
         $recentLogsQuery = ActivityLog::with('user');
 
         if ($user->role === 'administrator') {
@@ -63,7 +64,7 @@ class CatalogController extends Controller
                 ];
             });
 
-        $props = compact('items', 'categories', 'recentLogs');
+        $props = compact('items', 'categories', 'recentLogs', 'bidders');
 
         // Only expose full user list to developers
         if ($user->role === 'developer') {

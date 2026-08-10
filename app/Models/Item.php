@@ -10,16 +10,15 @@ class Item extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'item_code', 'name', 'description', 'specifications',
-        'unit_type', 'unit_price', 'price_referral', 'category_id', 'is_active', 'image_url'
+        'item_code', 'name', 'description', 
+        'unit_type', 'unit_cost', 'quantity', 'abc', 'category_id', 'image_url'
     ];
 
 
     protected $casts = [
-        'specifications'  => 'array',
-        'price_referral' => 'array',
-        'is_active'       => 'boolean',
-        'unit_price'      => 'decimal:2',
+        'unit_cost'      => 'decimal:2',
+        'quantity'       => 'decimal:2',
+        'abc'            => 'decimal:2',
     ];
 
 
@@ -43,5 +42,10 @@ class Item extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function bidders(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Bidder::class, 'item_bidder')->withPivot('unit_cost')->withTimestamps();
     }
 }

@@ -79,7 +79,7 @@ export default function StatDetailsModal({ isOpen, onClose, title, data, type }:
                     <th className="p-4 font-semibold">Item Code</th>
                     <th className="p-4 font-semibold">Name</th>
                     <th className="p-4 font-semibold">Unit Type</th>
-                    <th className="p-4 font-semibold">Unit Price</th>
+                    <th className="p-4 font-semibold">Unit Cost</th>
                   </>
                 ) : (
                   <>
@@ -108,7 +108,7 @@ export default function StatDetailsModal({ isOpen, onClose, title, data, type }:
                           <div className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{(item as Item).description}</div>
                         </td>
                         <td className="p-4 text-sm text-slate-600 dark:text-slate-400">{(item as Item).unit_type}</td>
-                        <td className="p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">₱{Number((item as Item).unit_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                        <td className="p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">₱{Number((item as Item).unit_cost).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
                       </>
                     ) : (
                       <>

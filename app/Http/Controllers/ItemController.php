@@ -10,20 +10,34 @@ class ItemController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'item_code' => ['required', 'string', 'max:50', 'unique:items,item_code'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'specifications' => ['nullable', 'array'],
             'unit_type' => ['required', 'string', 'max:100'],
-            'unit_price' => ['required', 'numeric', 'min:0'],
-            'price_referral' => ['nullable', 'array'],
-            'price_referral.*' => ['nullable', 'string', 'max:50'],
+            'unit_cost' => ['required', 'numeric', 'min:0'],
+            'quantity' => ['required', 'numeric', 'min:1'],
             'category_id' => ['required', 'exists:categories,id'],
-            'is_active' => ['boolean'],
             'image_url' => ['nullable', 'string', 'max:500'],
+            'bidders' => ['nullable', 'array'],
+            'bidders.*.id' => ['required', 'exists:bidders,id'],
+            'bidders.*.unit_cost' => ['required', 'numeric', 'min:0'],
         ]);
 
+        do {
+            $code = strtoupper(\Illuminate\Support\Str::random(3)) . '-' . mt_rand(100, 999);
+        } while (Item::where('item_code', $code)->exists());
+        
+        $validated['item_code'] = $code;
+        $validated['abc'] = $validated['unit_cost'] * $validated['quantity'];
+
         $item = Item::create($validated);
+
+        if (!empty($validated['bidders'])) {
+            $syncData = [];
+            foreach ($validated['bidders'] as $bidder) {
+                $syncData[$bidder['id']] = ['unit_cost' => $bidder['unit_cost']];
+            }
+            $item->bidders()->sync($syncData);
+        }
 
         return back()->with('success', "Item '{$item->name}' created successfully.");
     }
@@ -31,20 +45,31 @@ class ItemController extends Controller
     public function update(Request $request, Item $item): RedirectResponse
     {
         $validated = $request->validate([
-            'item_code' => ['required', 'string', 'max:50', 'unique:items,item_code,' . $item->id],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'specifications' => ['nullable', 'array'],
             'unit_type' => ['required', 'string', 'max:100'],
-            'unit_price' => ['required', 'numeric', 'min:0'],
-            'price_referral' => ['nullable', 'array'],
-            'price_referral.*' => ['nullable', 'string', 'max:50'],
+            'unit_cost' => ['required', 'numeric', 'min:0'],
+            'quantity' => ['required', 'numeric', 'min:1'],
             'category_id' => ['required', 'exists:categories,id'],
-            'is_active' => ['boolean'],
             'image_url' => ['nullable', 'string', 'max:500'],
+            'bidders' => ['nullable', 'array'],
+            'bidders.*.id' => ['required', 'exists:bidders,id'],
+            'bidders.*.unit_cost' => ['required', 'numeric', 'min:0'],
         ]);
 
+        $validated['abc'] = $validated['unit_cost'] * $validated['quantity'];
+
         $item->update($validated);
+
+        if (isset($validated['bidders'])) {
+            $syncData = [];
+            foreach ($validated['bidders'] as $bidder) {
+                $syncData[$bidder['id']] = ['unit_cost' => $bidder['unit_cost']];
+            }
+            $item->bidders()->sync($syncData);
+        } else {
+            $item->bidders()->detach();
+        }
 
         return back()->with('success', "Item '{$item->name}' updated successfully.");
     }
