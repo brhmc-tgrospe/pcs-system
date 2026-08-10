@@ -33,7 +33,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
   return (
     <div className="p-6 max-w-7xl mx-auto h-full overflow-y-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">PCS Dashboard</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">PCS Dashboard</h1>
         <p className="text-slate-500 dark:text-slate-400">Welcome to the Procurement Catalog System.</p>
       </div>
 
@@ -41,9 +41,9 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
         {visibleStats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
-            <div key={idx} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div key={idx} className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700">
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
+                <div className={`p-3 rounded-lg ${stat.bg} ${stat.color}`}>
                   <Icon className="w-6 h-6" />
                 </div>
                 <button 
@@ -61,7 +61,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[500px]">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[500px]">
           <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Activity className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -90,7 +90,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
           )}
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[500px]">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[500px]">
           <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex items-center gap-2">
             <Layers className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Category Breakdown</h2>
@@ -103,7 +103,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
                     <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                     <span className="font-medium text-slate-700 dark:text-slate-200">{cat.name}</span>
                   </div>
-                  <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                  <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded text-xs font-bold">
                     {cat.items_count} items
                   </span>
                 </li>

@@ -256,15 +256,15 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
     <div className="p-6 max-w-7xl mx-auto h-full flex flex-col">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Manage Items</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">Manage Items</h1>
           <p className="text-slate-500 dark:text-slate-400">Add, edit, or remove procurement items.</p>
         </div>
-        <button onClick={openAddModal} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors shadow-sm">
+        <button onClick={openAddModal} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
           <Plus className="w-5 h-5" /> Add Item
         </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex-1 flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm flex-1 flex flex-col overflow-hidden">
         <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row gap-4">
           <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -436,7 +436,7 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">{editingItem ? 'Edit Item' : 'Add New Item'}</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><X className="w-5 h-5" /></button>
@@ -569,7 +569,7 @@ export default function ManageItems({ items, categories, onViewItem, user }: Man
                 Cancel
               </button>
               <button type="submit" form="item-form" disabled={processing}
-                className="px-6 py-2 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm disabled:opacity-60">
+                className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm disabled:opacity-60">
                 <Check className="w-4 h-4" />
                 {processing ? 'Saving...' : editingItem ? 'Save Changes' : 'Create Item'}
               </button>

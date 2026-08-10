@@ -99,7 +99,7 @@ export default function Header({ onOpenMobile, user, users }: HeaderProps) {
             
             {/* Search Dropdown */}
             {showSearchDropdown && (searchQuery.trim().length >= 2) && (
-              <div className="absolute top-full left-0 mt-2 w-96 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-50">
+              <div className="absolute top-full left-0 mt-2 w-96 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden z-50">
                 {isSearching ? (
                   <div className="p-4 flex items-center justify-center text-slate-500 gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" /> Searching...
@@ -181,7 +181,7 @@ export default function Header({ onOpenMobile, user, users }: HeaderProps) {
             </div>
 
             {/* Dropdown Menu */}
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 overflow-hidden py-1 z-50">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 overflow-hidden py-1 z-50">
               <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 sm:hidden">
                 <div className="text-sm font-bold text-slate-900 dark:text-white">{user.full_name}</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 capitalize">{user.role}</div>

@@ -37,12 +37,12 @@ export default function MasterCatalog({ items, categories, onViewItem, onNavigat
     <div className="p-6 max-w-7xl mx-auto h-full flex flex-col">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Master Catalog</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">Master Catalog</h1>
           <p className="text-slate-500 dark:text-slate-400">Browse, search, and view complete procurement specifications.</p>
         </div>
         <button
           onClick={() => onNavigate('print_report')}
-          className="hidden sm:flex items-center gap-2 bg-slate-800 dark:bg-blue-600 hover:bg-slate-900 dark:hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors shadow-sm"
+          className="hidden sm:flex items-center gap-2 bg-slate-800 dark:bg-blue-600 hover:bg-slate-900 dark:hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
           Print Report
@@ -57,7 +57,7 @@ export default function MasterCatalog({ items, categories, onViewItem, onNavigat
             placeholder="Search by name, code, or description..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm transition-shadow text-sm"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm transition-shadow text-sm"
           />
         </div>
         <div className="relative">
@@ -65,7 +65,7 @@ export default function MasterCatalog({ items, categories, onViewItem, onNavigat
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full sm:w-64 pl-10 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm appearance-none text-sm text-slate-700 dark:text-slate-200"
+            className="w-full sm:w-64 pl-10 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm appearance-none text-sm text-slate-700 dark:text-slate-200"
           >
             <option value="all">All Categories</option>
             {categories.map((cat) => (
@@ -85,45 +85,49 @@ export default function MasterCatalog({ items, categories, onViewItem, onNavigat
             <p className="text-slate-500 text-sm max-w-sm">We couldn't find any items matching your search criteria.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
-            {paginatedItems.map((item) => {
-              const category = categories.find((c) => c.id === item.category_id);
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => onViewItem(item)}
-                  className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.15)] cursor-pointer transition-all duration-200 group flex flex-col h-full relative overflow-hidden"
-                >
-                  <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  <div className="flex items-start justify-between mb-4">
-                    <span className="inline-flex items-center px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-mono font-medium">
-                      {item.item_code}
-                    </span>
-                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-md border border-blue-100 dark:border-blue-800/50">
-                      {category?.name}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
-                    {item.name}
-                  </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 line-clamp-2 flex-grow">
-                    {item.description}
-                  </p>
-                  <div className="flex items-end justify-between mt-auto">
-                    <div>
-                      <div className="text-xs text-slate-400 mb-0.5">Unit Price</div>
-                      <div className="font-semibold text-slate-900 dark:text-slate-100">
+          <div className="overflow-x-auto pb-8 rounded-lg border border-slate-200 dark:border-slate-800">
+            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+              <thead className="bg-slate-50 dark:bg-slate-800/50">
+                <tr>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Item Code</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Category</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">Description</th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unit Price</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
+                {paginatedItems.map((item) => {
+                  const category = categories.find((c) => c.id === item.category_id);
+                  return (
+                    <tr
+                      key={item.id}
+                      onClick={() => onViewItem(item)}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer transition-colors"
+                    >
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-slate-600 dark:text-slate-400">
+                        {item.item_code}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {item.name}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                          {category?.name}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 truncate max-w-xs xl:max-w-md hidden md:table-cell">
+                        {item.description}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-slate-900 dark:text-slate-100">
                         ₱{Number(item.unit_price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                        <span className="text-xs font-normal text-slate-500 dark:text-slate-500 ml-1">/ {item.unit_type.toLowerCase()}</span>
-                      </div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      <Box className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                        <span className="text-xs font-normal text-slate-500 ml-1">/ {item.unit_type.toLowerCase()}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
