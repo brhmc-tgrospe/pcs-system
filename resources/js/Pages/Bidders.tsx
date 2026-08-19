@@ -1,27 +1,26 @@
 import { useState, useEffect } from 'react';
 import { usePage, router, useForm } from '@inertiajs/react';
-import { Search, Plus, Edit2, Trash2, X, Check, ArrowLeft, Building, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Check, ArrowLeft, Building, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import Sidebar from '../Components/Sidebar';
 import Header from '../Components/Header';
 import ImpersonationBanner from '../Components/ImpersonationBanner';
 import Toast from '../Components/Toast';
 import ConfirmationModal from '../Components/ConfirmationModal';
-import { AuthUser } from '../types';
-
-interface Bidder {
-  id: number;
-  name: string;
-  contact_person: string | null;
-  contact_number: string | null;
-  email: string | null;
-  address: string | null;
-  bidder_code?: string;
-}
+import { AuthUser, Bidder } from '../types';
 
 interface BiddersProps {
   bidders: Bidder[];
   auth: { user: AuthUser };
 }
+
+type BidderItemInput = {
+  name: string;
+  bidder_code: string;
+  contact_person?: string;
+  contact_number?: string;
+  email?: string;
+  address?: string;
+};
 
 type BidderFormData = {
   name: string;
@@ -30,6 +29,7 @@ type BidderFormData = {
   email: string;
   address: string;
   bidder_code: string;
+  bidders: BidderItemInput[];
 };
 
 export default function Bidders() {
@@ -50,6 +50,15 @@ export default function Bidders() {
     setCurrentPage(1);
   }, [searchTerm, perPage]);
 
+  const createEmptyBidder = (): BidderItemInput => ({
+    name: '',
+    bidder_code: '',
+    contact_person: '',
+    contact_number: '',
+    email: '',
+    address: '',
+  });
+
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<BidderFormData>({
     name: '',
     contact_person: '',
@@ -57,11 +66,12 @@ export default function Bidders() {
     email: '',
     address: '',
     bidder_code: '',
+    bidders: [createEmptyBidder()],
   });
 
   const filteredBidders = bidders.filter(b => {
     const term = searchTerm.toLowerCase();
-    return b.name.toLowerCase().includes(term) || b.id.toString().includes(term);
+    return b.name.toLowerCase().includes(term) || b.id.toString().includes(term) || (b.bidder_code && b.bidder_code.toLowerCase().includes(term));
   });
 
   const totalPages = Math.ceil(filteredBidders.length / perPage) || 1;
@@ -70,6 +80,15 @@ export default function Bidders() {
   const openAddModal = () => {
     clearErrors();
     reset();
+    setData({
+      name: '',
+      contact_person: '',
+      contact_number: '',
+      email: '',
+      address: '',
+      bidder_code: '',
+      bidders: [createEmptyBidder()],
+    });
     setEditingBidder(null);
     setIsModalOpen(true);
   };
@@ -83,9 +102,26 @@ export default function Bidders() {
       email: b.email || '',
       address: b.address || '',
       bidder_code: b.bidder_code || '',
+      bidders: [],
     });
     setEditingBidder(b);
     setIsModalOpen(true);
+  };
+
+  const addBidderRow = () => {
+    setData('bidders', [...data.bidders, createEmptyBidder()]);
+  };
+
+  const removeBidderRow = (index: number) => {
+    if (data.bidders.length <= 1) return;
+    const updated = data.bidders.filter((_, i) => i !== index);
+    setData('bidders', updated);
+  };
+
+  const updateBidderRow = (index: number, field: keyof BidderItemInput, value: string) => {
+    const updated = [...data.bidders];
+    updated[index] = { ...updated[index], [field]: value };
+    setData('bidders', updated);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -253,70 +289,136 @@ export default function Bidders() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+          <div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full ${editingBidder ? 'max-w-lg' : 'max-w-2xl'} overflow-hidden flex flex-col max-h-[90vh]`}>
             <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{editingBidder ? 'Edit Bidder' : 'Add New Bidder'}</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {editingBidder ? 'Edit Bidder' : 'Add New Bidders'}
+                </h3>
+                {!editingBidder && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Enter one or more bidders to add to the system.
+                  </p>
+                )}
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-6 overflow-y-auto">
+            <div className="p-6 overflow-y-auto flex-1">
               <form id="bidder-form" onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Company / Bidder Name</label>
-                  <input required type="text" value={data.name} onChange={e => setData('name', e.target.value)}
-                    className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.name ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`} />
-                  {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Bidder Code</label>
-                  <input required type="text" value={data.bidder_code} onChange={e => setData('bidder_code', e.target.value)}
-                    className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white font-mono text-sm ${errors.bidder_code ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
-                    placeholder="e.g. BDR-123" />
-                  {errors.bidder_code && <p className="mt-1 text-xs text-red-600">{errors.bidder_code}</p>}
-                </div>
-                {/* Contact details hidden for now as per requirements */}
-                <div className="hidden">
-                  <div className="grid grid-cols-2 gap-4">
+                {errors.bidders && (
+                  <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{errors.bidders}</span>
+                  </div>
+                )}
+
+                {editingBidder ? (
+                  <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Contact Person</label>
-                      <input type="text" value={data.contact_person} onChange={e => setData('contact_person', e.target.value)}
-                        className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.contact_person ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`} />
-                      {errors.contact_person && <p className="mt-1 text-xs text-red-600">{errors.contact_person}</p>}
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Company / Bidder Name</label>
+                      <input required type="text" value={data.name} onChange={e => setData('name', e.target.value)}
+                        className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.name ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`} />
+                      {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Contact Number</label>
-                      <input type="text" value={data.contact_number} onChange={e => setData('contact_number', e.target.value)}
-                        className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.contact_number ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`} />
-                      {errors.contact_number && <p className="mt-1 text-xs text-red-600">{errors.contact_number}</p>}
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Bidder Code</label>
+                      <input required type="text" value={data.bidder_code} onChange={e => setData('bidder_code', e.target.value)}
+                        className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white font-mono text-sm ${errors.bidder_code ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
+                        placeholder="e.g. BDR-123" />
+                      {errors.bidder_code && <p className="mt-1 text-xs text-red-600">{errors.bidder_code}</p>}
                     </div>
                   </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      {data.bidders.map((bidder, index) => {
+                        const nameError = (errors as Record<string, string>)[`bidders.${index}.name`];
+                        const codeError = (errors as Record<string, string>)[`bidders.${index}.bidder_code`];
 
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Email</label>
-                    <input type="email" value={data.email} onChange={e => setData('email', e.target.value)}
-                      className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.email ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`} />
-                    {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+                        return (
+                          <div key={index} className="p-4 bg-slate-50 dark:bg-slate-700/40 rounded-xl border border-slate-200 dark:border-slate-700 relative transition-all">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                                <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold">
+                                  {index + 1}
+                                </span>
+                                Bidder #{index + 1}
+                              </span>
+                              {data.bidders.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeBidderRow(index)}
+                                  className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors"
+                                  title="Remove this bidder"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                  Company / Bidder Name <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                  required
+                                  type="text"
+                                  value={bidder.name}
+                                  onChange={e => updateBidderRow(index, 'name', e.target.value)}
+                                  placeholder="e.g. Acme Supplies Corp."
+                                  className={`w-full px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${nameError ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
+                                />
+                                {nameError && <p className="mt-1 text-xs text-red-600">{nameError}</p>}
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                  Bidder Code <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                  required
+                                  type="text"
+                                  value={bidder.bidder_code}
+                                  onChange={e => updateBidderRow(index, 'bidder_code', e.target.value)}
+                                  placeholder="e.g. BDR-101"
+                                  className={`w-full px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${codeError ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
+                                />
+                                {codeError && <p className="mt-1 text-xs text-red-600">{codeError}</p>}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={addBidderRow}
+                      className="w-full py-2.5 px-4 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" /> Add more bidders
+                    </button>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Address</label>
-                    <input type="text" value={data.address} onChange={e => setData('address', e.target.value)}
-                      className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${errors.address ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`} />
-                    {errors.address && <p className="mt-1 text-xs text-red-600">{errors.address}</p>}
-                  </div>
-                </div>
-
+                )}
               </form>
             </div>
 
-            <div className="p-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-3 justify-end">
+            <div className="p-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex gap-3 justify-end items-center">
               <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 dark:text-slate-300 font-medium hover:text-slate-800 dark:hover:text-white transition-colors">
                 Cancel
               </button>
               <button type="submit" form="bidder-form" disabled={processing}
                 className="px-6 py-2 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm disabled:opacity-60">
                 <Check className="w-4 h-4" />
-                {processing ? 'Saving...' : editingBidder ? 'Save Changes' : 'Add Bidder'}
+                {processing
+                  ? 'Saving...'
+                  : editingBidder
+                  ? 'Save Changes'
+                  : data.bidders.length > 1
+                  ? `Add ${data.bidders.length} Bidders`
+                  : 'Add Bidder'}
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { router, useForm, usePage } from '@inertiajs/react';
 import { Search, Plus, Edit2, Trash2, X, Check, Eye, Filter, ArchiveRestore, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { Item, Category, AuthUser, Bidder } from '../types';
 import ConfirmationModal from './ConfirmationModal';
+import ImportItemsModal from './ImportItemsModal';
 import { useDataTable } from '../hooks/useDataTable';
 
 interface ManageItemsProps {
@@ -35,7 +36,7 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
   const [itemToRestore, setItemToRestore] = useState<Item | null>(null);
   const [isImporting, setIsImporting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const {
     searchTerm, setSearchTerm,
@@ -132,10 +133,7 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleImportCsv = (file: File) => {
     setIsImporting(true);
     const formData = new FormData();
     formData.append('csv_file', file);
@@ -144,15 +142,10 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
       preserveScroll: true,
       onSuccess: () => {
         setIsImporting(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+        setIsImportModalOpen(false);
       },
       onError: () => {
         setIsImporting(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
       },
     });
   };
@@ -261,19 +254,11 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
           <p className="text-slate-500 dark:text-slate-400">Add, edit, or remove procurement items.</p>
         </div>
         <div className="flex items-center gap-3">
-          <input 
-            type="file" 
-            ref={fileInputRef}
-            className="hidden" 
-            accept=".csv"
-            onChange={handleFileSelect}
-          />
           <button 
-            onClick={() => fileInputRef.current?.click()} 
-            disabled={isImporting}
-            className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-60"
+            onClick={() => setIsImportModalOpen(true)} 
+            className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm cursor-pointer"
           >
-            <Upload className="w-5 h-5" /> {isImporting ? 'Importing...' : 'Import CSV'}
+            <Upload className="w-5 h-5" /> Import CSV
           </button>
           <button onClick={openAddModal} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
             <Plus className="w-5 h-5" /> Add Item
@@ -634,6 +619,15 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
         onConfirm={execAction}
         onCancel={() => setModalConfig(null)}
         isProcessing={processing}
+      />
+
+      <ImportItemsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportCsv}
+        isProcessing={isImporting}
+        categories={categories}
+        bidders={bidders}
       />
     </div>
   );

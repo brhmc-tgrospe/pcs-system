@@ -4,11 +4,39 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
+        if ($request->has('categories') && is_array($request->input('categories'))) {
+            $validated = $request->validate([
+                'categories' => ['required', 'array', 'min:1'],
+                'categories.*.name' => ['required', 'string', 'max:255', 'distinct', 'unique:categories,name'],
+                'categories.*.cat_code' => ['required', 'string', 'max:255', 'distinct', 'unique:categories,cat_code', 'regex:/^[a-z0-9-]+$/'],
+                'categories.*.description' => ['nullable', 'string', 'max:1000'],
+                'categories.*.parent_id' => ['nullable', 'exists:categories,id'],
+            ], [
+                'categories.*.name.required' => 'Category name is required.',
+                'categories.*.name.distinct' => 'Each category name must be unique.',
+                'categories.*.name.unique' => 'The category name :input has already been taken.',
+                'categories.*.cat_code.required' => 'Category code is required.',
+                'categories.*.cat_code.distinct' => 'Each category code must be unique.',
+                'categories.*.cat_code.unique' => 'The category code :input has already been taken.',
+                'categories.*.cat_code.regex' => 'The category code must only contain lowercase letters, numbers, and hyphens.',
+            ]);
+
+            DB::transaction(function () use ($validated) {
+                foreach ($validated['categories'] as $catData) {
+                    Category::create($catData);
+                }
+            });
+
+            $count = count($validated['categories']);
+            return back()->with('success', $count > 1 ? "{$count} categories created successfully." : 'Category created successfully.');
+        }
+
         $validated = $request->validate([
             'name'        => ['required', 'string', 'max:255', 'unique:categories,name'],
             'cat_code'    => ['required', 'string', 'max:255', 'unique:categories,cat_code', 'regex:/^[a-z0-9-]+$/'],
