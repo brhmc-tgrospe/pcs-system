@@ -38,6 +38,15 @@ export default function ManageUsers() {
   const [perPage, setPerPage] = useState(10);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+      setSearchTerm(searchParam);
+      window.history.replaceState({}, '', '/users');
+    }
+  }, []);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, roleFilter, perPage]);
 

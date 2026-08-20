@@ -7,13 +7,20 @@ interface MasterCatalogProps {
   categories: Category[];
   onViewItem: (item: Item) => void;
   onNavigate: (view: string) => void;
+  initialCategory?: string;
 }
 
-export default function MasterCatalog({ items, categories, onViewItem, onNavigate }: MasterCatalogProps) {
+export default function MasterCatalog({ items, categories, onViewItem, onNavigate, initialCategory }: MasterCatalogProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'all');
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(25);
+
+  useEffect(() => {
+    if (initialCategory) {
+      setSelectedCategory(initialCategory);
+    }
+  }, [initialCategory]);
 
   useEffect(() => {
     setCurrentPage(1);

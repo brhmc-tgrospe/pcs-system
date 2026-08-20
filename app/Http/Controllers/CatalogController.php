@@ -18,21 +18,7 @@ class CatalogController extends Controller
         $items = Item::withTrashed()->with(['category', 'bidders' => function($q) { $q->withTrashed(); }])->orderBy('item_code')->get();
         $categories = Category::withTrashed()->withCount('items')->orderBy('name')->get();
         $bidders = \App\Models\Bidder::orderBy('name')->get();
-        $recentLogsQuery = ActivityLog::with('user');
-
-        if ($user->role === 'administrator') {
-            $recentLogsQuery->where(function($q) {
-                $q->whereNull('user_id')
-                  ->orWhereHas('user', function($uq) {
-                      $uq->whereIn('role', ['administrator', 'user']);
-                  });
-            });
-        } elseif ($user->role === 'user') {
-            $recentLogsQuery->where(function($q) use ($user) {
-                $q->where('user_id', $user->id)
-                  ->orWhereIn('action', ['category_created', 'item_created']);
-            });
-        }
+        $recentLogsQuery = ActivityLog::with('user')->visibleTo($user);
 
         $recentLogs = $recentLogsQuery
             ->latest()

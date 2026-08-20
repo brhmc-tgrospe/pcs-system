@@ -21,20 +21,39 @@ export default function CatalogApp() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [viewingItem, setViewingItem] = useState<Item | null>(null);
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const viewItemStr = params.get('view_item');
+    const categoryStr = params.get('category');
+    const viewStr = params.get('view');
+
+    let shouldCleanUrl = false;
+
     if (viewItemStr) {
       const viewItemId = Number(viewItemStr);
-      const itemToView = items.find(i => i.id === viewItemId);
+      const itemToView = items.find((i) => i.id === viewItemId);
       if (itemToView) {
         setViewingItem(itemToView);
         setCurrentView('catalog');
-        
-        // Remove param from URL without reloading
-        window.history.replaceState({}, '', '/catalog');
+        shouldCleanUrl = true;
       }
+    }
+
+    if (categoryStr) {
+      setActiveCategoryFilter(categoryStr);
+      setCurrentView('catalog');
+      shouldCleanUrl = true;
+    }
+
+    if (viewStr && ['dashboard', 'catalog', 'manage_items', 'manage_categories', 'print_report'].includes(viewStr)) {
+      setCurrentView(viewStr as View);
+      shouldCleanUrl = true;
+    }
+
+    if (shouldCleanUrl) {
+      window.history.replaceState({}, '', '/catalog');
     }
   }, [items]);
 
@@ -42,6 +61,7 @@ export default function CatalogApp() {
     setCurrentView(view as View);
     setIsMobileOpen(false);
   };
+
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -90,6 +110,7 @@ export default function CatalogApp() {
               categories={categories}
               onViewItem={setViewingItem}
               onNavigate={navigate}
+              initialCategory={activeCategoryFilter}
             />
           )}
           {currentView === 'manage_items' && (

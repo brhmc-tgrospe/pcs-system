@@ -140,3 +140,10 @@ export interface ActivityLogsProps {
   auth: { user: AuthUser };
 }
 
+export interface SearchResults {
+  items: Item[];
+  categories: Category[];
+  bidders: Bidder[];
+  users: UserSummary[];
+}
+

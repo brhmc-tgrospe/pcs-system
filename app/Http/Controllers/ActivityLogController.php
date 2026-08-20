@@ -10,16 +10,7 @@ class ActivityLogController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $query = ActivityLog::with('user')->latest();
-
-        if ($user->role === 'administrator') {
-            $query->where(function($q) {
-                $q->whereNull('user_id')
-                  ->orWhereHas('user', function($uq) {
-                      $uq->whereIn('role', ['administrator', 'user']);
-                  });
-            });
-        }
+        $query = ActivityLog::with('user')->visibleTo($user)->latest();
 
         if ($request->filled('search')) {
             $search = $request->string('search')->toString();
