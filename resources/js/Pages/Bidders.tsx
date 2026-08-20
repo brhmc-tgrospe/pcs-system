@@ -175,66 +175,131 @@ export default function Bidders() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header onOpenMobile={() => setIsMobileOpen(true)} user={user} />
 
-        <main className={`flex-1 overflow-y-auto relative ${user.is_impersonating ? 'mt-10' : ''} p-6`}>
-          <div className="max-w-7xl mx-auto h-full flex flex-col">
-            <div className="flex justify-between items-end mb-8">
-              <div className="flex items-center gap-4">
-                <button onClick={() => router.visit('/catalog')} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-200 rounded-xl transition-colors">
-                  <ArrowLeft className="w-6 h-6" />
+        <main className={`flex-1 overflow-y-auto relative ${user.is_impersonating ? 'mt-10' : ''} p-4 sm:p-6`}>
+          <div className="max-w-7xl mx-auto h-full flex flex-col gap-4">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => router.visit('/catalog')}
+                  className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  title="Back to Catalog"
+                >
+                  <ArrowLeft className="w-5 h-5" />
                 </button>
+                <div className="p-2 bg-fuchsia-50 dark:bg-fuchsia-950/40 border border-fuchsia-200/70 dark:border-fuchsia-800/70 text-fuchsia-600 dark:text-fuchsia-400 rounded-xl">
+                  <Building className="w-5 h-5" />
+                </div>
                 <div>
-                  <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                    <Building className="w-8 h-8 text-fuchsia-600" /> Manage Bidders
-                  </h1>
-                  <p className="text-slate-500">Add, edit, or remove bidders and their contact information.</p>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                      Manage Bidders
+                    </h1>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-fuchsia-50 dark:bg-fuchsia-950/50 text-fuchsia-700 dark:text-fuchsia-300 border border-fuchsia-200/60 dark:border-fuchsia-800/60">
+                      {bidders.length} {bidders.length === 1 ? 'Bidder' : 'Bidders'}
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                    Add, edit, or remove registered vendor bidders and company codes.
+                  </p>
                 </div>
               </div>
-              <button onClick={openAddModal} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors shadow-sm">
-                <Plus className="w-5 h-5" /> Add Bidder
+
+              <button
+                onClick={openAddModal}
+                className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition-all shrink-0 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Add Bidder
               </button>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex-1 flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <div className="relative w-full max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input type="text" placeholder="Search bidders by name, contact or email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:text-slate-100 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            {/* Table Container */}
+            <div className="bg-white dark:bg-slate-800/95 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm flex-1 flex flex-col overflow-hidden min-h-0">
+              {/* Toolbar */}
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/60 flex items-center justify-between gap-3">
+                <div className="relative w-full max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search bidders by code, name, or ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3.5 py-1.5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm dark:text-slate-100 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  />
                 </div>
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-medium px-2 py-1"
+                  >
+                    Clear search
+                  </button>
+                )}
               </div>
 
-              <div className="flex-1 overflow-y-auto">
+              {/* Table Data */}
+              <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider sticky top-0 backdrop-blur-sm z-10 border-b border-slate-200 dark:border-slate-700">
-                      <th className="p-4 font-semibold w-24">ID</th>
-                      <th className="p-4 font-semibold w-32">Bidder Code</th>
-                      <th className="p-4 font-semibold">Bidder Name</th>
-                      <th className="p-4 font-semibold text-right">Actions</th>
+                    <tr className="bg-slate-50/90 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider sticky top-0 backdrop-blur-md z-10 border-b border-slate-100 dark:border-slate-700">
+                      <th className="py-2.5 px-4 font-semibold w-20">ID</th>
+                      <th className="py-2.5 px-4 font-semibold w-40">Bidder Code</th>
+                      <th className="py-2.5 px-4 font-semibold">Bidder Name</th>
+                      <th className="py-2.5 px-4 font-semibold w-28 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
                     {paginatedBidders.length === 0 ? (
-                      <tr><td colSpan={4} className="p-8 text-center text-slate-500">No bidders found.</td></tr>
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-slate-500 dark:text-slate-400">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <Building className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                            <p className="text-sm font-medium">No bidders found matching your search.</p>
+                            {searchTerm && (
+                              <button
+                                onClick={() => setSearchTerm('')}
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
+                              >
+                                Reset search filter
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     ) : (
-                      paginatedBidders.map(b => (
-                        <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                          <td className="p-4 text-slate-500 dark:text-slate-400 font-mono">
+                      paginatedBidders.map((b) => (
+                        <tr
+                          key={b.id}
+                          className="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors group"
+                        >
+                          <td className="py-2.5 px-4 text-xs font-mono text-slate-500 dark:text-slate-400">
                             #{b.id}
                           </td>
-                          <td className="p-4 text-slate-500 dark:text-slate-400 font-mono text-sm">
-                            {b.bidder_code || '-'}
+                          <td className="py-2.5 px-4">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-700/70 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-600/70">
+                              {b.bidder_code || '-'}
+                            </span>
                           </td>
-                          <td className="p-4">
-                            <div className="font-bold text-slate-900 dark:text-slate-100">{b.name}</div>
+                          <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
+                            {b.name}
                           </td>
-                          <td className="p-4 text-right">
-                            <button onClick={() => openEditModal(b)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Edit">
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => handleDelete(b)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors" title="Delete">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                          <td className="py-2.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => openEditModal(b)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                title="Edit Bidder"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(b)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
+                                title="Delete Bidder"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -245,13 +310,13 @@ export default function Bidders() {
 
               {/* Pagination */}
               {filteredBidders.length > 0 && (
-                <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-600 dark:text-slate-400">
+                <div className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 shrink-0">
                   <div className="flex items-center gap-2">
                     <span>Show</span>
                     <select
                       value={perPage}
                       onChange={(e) => setPerPage(Number(e.target.value))}
-                      className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value={10}>10</option>
                       <option value={25}>25</option>
@@ -265,19 +330,19 @@ export default function Bidders() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+                      className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
                     >
-                      <ChevronLeft className="w-5 h-5" />
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="px-2 font-medium">Page {currentPage} of {totalPages}</span>
                     <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+                      className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
                     >
-                      <ChevronRight className="w-5 h-5" />
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -289,19 +354,33 @@ export default function Bidders() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full ${editingBidder ? 'max-w-lg' : 'max-w-2xl'} overflow-hidden flex flex-col max-h-[90vh]`}>
-            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  {editingBidder ? 'Edit Bidder' : 'Add New Bidders'}
-                </h3>
-                {!editingBidder && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Enter one or more bidders to add to the system.
-                  </p>
-                )}
+          <div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full ${editingBidder ? 'max-w-lg' : 'max-w-2xl'} overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700`}>
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-fuchsia-50 dark:bg-fuchsia-950/40 text-fuchsia-600 dark:text-fuchsia-400 rounded-xl">
+                  <Building className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                    {editingBidder ? 'Edit Bidder' : 'Add New Bidders'}
+                  </h3>
+                  {!editingBidder ? (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Enter one or more bidders to add to the system registry.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Update bidder company name or identifier code.
+                    </p>
+                  )}
+                </div>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><X className="w-5 h-5" /></button>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             <div className="p-6 overflow-y-auto flex-1">
