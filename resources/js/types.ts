@@ -34,6 +34,7 @@ export interface Bidder {
   contact_number: string | null;
   email: string | null;
   address: string | null;
+  location?: string | null;
   pivot?: {
     unit_cost: number;
   };
@@ -79,6 +80,25 @@ export interface UserSummary {
   role: UserRole;
 }
 
+export interface Signatory {
+  id: number;
+  name: string;
+  designation: string;
+  order: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ReportMetadata {
+  project_ref_no: string;
+  contract_name: string;
+  contract_location: string;
+  implementing_office: string;
+  report_date: string;
+  report_time: string;
+}
+
 export interface LaravelPagination<T> {
   data: T[];
   current_page: number;
@@ -100,8 +120,23 @@ export interface CatalogAppProps {
   auth: { user: AuthUser };
 }
 
+export interface SettingsPageProps {
+  auth: { user: AuthUser };
+  users?: UserSummary[];
+  signatories?: Signatory[];
+}
+
+export interface ReportViewProps {
+  items: Item[];
+  categories: Category[];
+  signatories: Signatory[];
+  metadata: ReportMetadata;
+  timestamp: string;
+}
+
 export interface ActivityLogsProps {
   logs: LaravelPagination<ActivityLogEntry>;
   search: string;
   auth: { user: AuthUser };
 }
+

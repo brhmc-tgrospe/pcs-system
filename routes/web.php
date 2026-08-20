@@ -59,11 +59,18 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
         // Bidders Management
+        Route::post('/catalog/bidders/import', [\App\Http\Controllers\BidderImportController::class, 'import'])->name('bidders.import');
         Route::get('/catalog/bidders', [\App\Http\Controllers\BidderController::class, 'index'])->name('bidders.index');
         Route::post('/catalog/bidders', [\App\Http\Controllers\BidderController::class, 'store'])->name('bidders.store');
         Route::put('/catalog/bidders/{bidder}', [\App\Http\Controllers\BidderController::class, 'update'])->name('bidders.update');
         Route::delete('/catalog/bidders/{bidder}', [\App\Http\Controllers\BidderController::class, 'destroy'])->name('bidders.destroy');
         Route::post('/catalog/bidders/{id}/restore', [\App\Http\Controllers\BidderController::class, 'restore'])->name('bidders.restore');
+
+        // Signatories Management (Admin & Developer only)
+        Route::post('/settings/signatories', [\App\Http\Controllers\SignatoryController::class, 'store'])->name('signatories.store');
+        Route::put('/settings/signatories/{signatory}', [\App\Http\Controllers\SignatoryController::class, 'update'])->name('signatories.update');
+        Route::delete('/settings/signatories/{signatory}', [\App\Http\Controllers\SignatoryController::class, 'destroy'])->name('signatories.destroy');
+        Route::post('/settings/signatories/reorder', [\App\Http\Controllers\SignatoryController::class, 'reorder'])->name('signatories.reorder');
     });
 
     Route::middleware(['role:developer'])->group(function () {

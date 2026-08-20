@@ -173,7 +173,7 @@ export default function StatDetailsModal({ isOpen, onClose, title, data, type }:
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-lg text-xs py-0.5 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-lg text-xs py-0.5 pl-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>

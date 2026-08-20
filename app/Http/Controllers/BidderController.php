@@ -30,6 +30,7 @@ class BidderController extends Controller
                 'bidders.*.contact_number' => ['nullable', 'string', 'max:255'],
                 'bidders.*.email' => ['nullable', 'email', 'max:255'],
                 'bidders.*.address' => ['nullable', 'string'],
+                'bidders.*.location' => ['nullable', 'string', 'max:255'],
             ], [
                 'bidders.*.name.required' => 'Bidder name is required.',
                 'bidders.*.bidder_code.required' => 'Bidder code is required.',
@@ -54,6 +55,7 @@ class BidderController extends Controller
             'contact_number' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string'],
+            'location' => ['nullable', 'string', 'max:255'],
         ]);
 
         Bidder::create($validated);
@@ -70,6 +72,7 @@ class BidderController extends Controller
             'contact_number' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string'],
+            'location' => ['nullable', 'string', 'max:255'],
         ]);
 
         $bidder->update($validated);

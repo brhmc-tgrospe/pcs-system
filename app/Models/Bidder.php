@@ -11,7 +11,7 @@ class Bidder extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'name', 'contact_person', 'contact_number', 'email', 'address', 'bidder_code'
+        'name', 'contact_person', 'contact_number', 'email', 'address', 'location', 'bidder_code'
     ];
 
     public function items(): BelongsToMany

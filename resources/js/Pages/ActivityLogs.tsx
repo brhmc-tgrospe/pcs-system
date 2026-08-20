@@ -129,7 +129,7 @@ export default function ActivityLogs() {
                     <select
                       value={perPage}
                       onChange={handlePerPageChange}
-                      className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm py-1 pl-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value={10}>10</option>
                       <option value={25}>25</option>

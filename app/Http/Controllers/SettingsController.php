@@ -11,7 +11,11 @@ class SettingsController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('Settings');
+        $signatories = \App\Models\Signatory::orderBy('order')->get();
+
+        return Inertia::render('Settings', [
+            'signatories' => $signatories,
+        ]);
     }
 
     public function update(Request $request): RedirectResponse

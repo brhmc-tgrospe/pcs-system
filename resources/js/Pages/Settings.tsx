@@ -6,14 +6,16 @@ import Header from '../Components/Header';
 import ImpersonationBanner from '../Components/ImpersonationBanner';
 import Toast from '../Components/Toast';
 import { useDarkMode } from '../Components/DarkModeContext';
-import { AuthUser, UserSummary } from '../types';
+import SignatoriesSettings from '../Components/SignatoriesSettings';
+import { AuthUser, UserSummary, Signatory } from '../types';
 
 interface SettingsProps {
   auth: { user: AuthUser };
   users?: UserSummary[];
+  signatories?: Signatory[];
 }
 
-export default function Settings({ auth, users }: SettingsProps) {
+export default function Settings({ auth, users, signatories = [] }: SettingsProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { isDark, toggle: toggleDarkMode } = useDarkMode();
 
@@ -49,7 +51,7 @@ export default function Settings({ auth, users }: SettingsProps) {
         <Header onOpenMobile={() => setIsMobileOpen(true)} user={auth.user} users={users} />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="max-w-4xl mx-auto space-y-8 pb-12">
             <div>
               <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">System Settings</h1>
               <p className="text-slate-500 dark:text-slate-400 mt-1">Configure application preferences and features.</p>
@@ -131,6 +133,9 @@ export default function Settings({ auth, users }: SettingsProps) {
                 </button>
               </div>
             </form>
+
+            {/* Official Report Signatories (Admin & Developer) */}
+            <SignatoriesSettings signatories={signatories} user={auth.user} />
           </div>
         </main>
       </div>

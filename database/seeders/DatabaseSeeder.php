@@ -109,5 +109,8 @@ class DatabaseSeeder extends Seeder
             $itemData['category_id'] = $catMap[$catCode];
             Item::withoutEvents(fn () => Item::firstOrCreate(['item_code' => $itemData['item_code']], $itemData));
         }
+
+        // Seed Default BRHMC Signatories
+        $this->call(SignatorySeeder::class);
     }
 }

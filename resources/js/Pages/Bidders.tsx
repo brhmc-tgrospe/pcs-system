@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
 import { usePage, router, useForm } from '@inertiajs/react';
-import { Search, Plus, Edit2, Trash2, X, Check, ArrowLeft, Building, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Check, ArrowLeft, Building, ChevronLeft, ChevronRight, AlertCircle, Upload } from 'lucide-react';
 import Sidebar from '../Components/Sidebar';
 import Header from '../Components/Header';
 import ImpersonationBanner from '../Components/ImpersonationBanner';
 import Toast from '../Components/Toast';
 import ConfirmationModal from '../Components/ConfirmationModal';
+import ImportBiddersModal from '../Components/ImportBiddersModal';
 import { AuthUser, Bidder } from '../types';
 
 interface BiddersProps {
   bidders: Bidder[];
   auth: { user: AuthUser };
+  flash?: {
+    success?: string;
+    error?: string;
+    import_errors?: string[];
+  };
 }
 
 type BidderItemInput = {
@@ -20,6 +26,7 @@ type BidderItemInput = {
   contact_number?: string;
   email?: string;
   address?: string;
+  location?: string;
 };
 
 type BidderFormData = {
@@ -28,18 +35,21 @@ type BidderFormData = {
   contact_number: string;
   email: string;
   address: string;
+  location: string;
   bidder_code: string;
   bidders: BidderItemInput[];
 };
 
 export default function Bidders() {
-  const { bidders, auth } = usePage<BiddersProps>().props;
+  const { bidders, auth, flash } = usePage<BiddersProps>().props;
   const user = auth.user;
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [editingBidder, setEditingBidder] = useState<Bidder | null>(null);
   const [bidderToDelete, setBidderToDelete] = useState<Bidder | null>(null);
 
@@ -57,6 +67,7 @@ export default function Bidders() {
     contact_number: '',
     email: '',
     address: '',
+    location: '',
   });
 
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<BidderFormData>({
@@ -65,13 +76,14 @@ export default function Bidders() {
     contact_number: '',
     email: '',
     address: '',
+    location: '',
     bidder_code: '',
     bidders: [createEmptyBidder()],
   });
 
   const filteredBidders = bidders.filter(b => {
     const term = searchTerm.toLowerCase();
-    return b.name.toLowerCase().includes(term) || b.id.toString().includes(term) || (b.bidder_code && b.bidder_code.toLowerCase().includes(term));
+    return b.name.toLowerCase().includes(term) || b.id.toString().includes(term) || (b.bidder_code && b.bidder_code.toLowerCase().includes(term)) || (b.location && b.location.toLowerCase().includes(term));
   });
 
   const totalPages = Math.ceil(filteredBidders.length / perPage) || 1;
@@ -86,6 +98,7 @@ export default function Bidders() {
       contact_number: '',
       email: '',
       address: '',
+      location: '',
       bidder_code: '',
       bidders: [createEmptyBidder()],
     });
@@ -101,6 +114,7 @@ export default function Bidders() {
       contact_number: b.contact_number || '',
       email: b.email || '',
       address: b.address || '',
+      location: b.location || '',
       bidder_code: b.bidder_code || '',
       bidders: [],
     });
@@ -137,6 +151,23 @@ export default function Bidders() {
         onSuccess: () => setIsModalOpen(false),
       });
     }
+  };
+
+  const handleImportCsv = (file: File) => {
+    setIsImporting(true);
+    const formData = new FormData();
+    formData.append('csv_file', file);
+
+    router.post('/catalog/bidders/import', formData, {
+      preserveScroll: true,
+      onSuccess: () => {
+        setIsImporting(false);
+        setIsImportModalOpen(false);
+      },
+      onError: () => {
+        setIsImporting(false);
+      },
+    });
   };
 
   const handleDelete = (b: Bidder) => {
@@ -205,13 +236,43 @@ export default function Bidders() {
                 </div>
               </div>
 
-              <button
-                onClick={openAddModal}
-                className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition-all shrink-0 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> Add Bidder
-              </button>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-sm cursor-pointer"
+                >
+                  <Upload className="w-4 h-4 text-blue-500" /> Import CSV
+                </button>
+                <button
+                  onClick={openAddModal}
+                  className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition-all shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> Add Bidder
+                </button>
+              </div>
             </div>
+
+            {flash?.import_errors && flash.import_errors.length > 0 && (
+              <div className="bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 rounded-xl p-3.5 shadow-sm shrink-0">
+                <div className="flex items-start">
+                  <div className="shrink-0 mt-0.5">
+                    <X className="h-4 w-4 text-rose-500" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-xs font-bold text-rose-800 dark:text-rose-300">
+                      CSV Import encountered {flash.import_errors.length} error(s)
+                    </h3>
+                    <div className="mt-1 text-xs text-rose-700 dark:text-rose-200 max-h-32 overflow-y-auto">
+                      <ul className="list-disc space-y-0.5 pl-4">
+                        {flash.import_errors.map((err: string, idx: number) => (
+                          <li key={idx}>{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Table Container */}
             <div className="bg-white dark:bg-slate-800/95 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm flex-1 flex flex-col overflow-hidden min-h-0">
@@ -243,15 +304,16 @@ export default function Bidders() {
                   <thead>
                     <tr className="bg-slate-50/90 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider sticky top-0 backdrop-blur-md z-10 border-b border-slate-100 dark:border-slate-700">
                       <th className="py-2.5 px-4 font-semibold w-20">ID</th>
-                      <th className="py-2.5 px-4 font-semibold w-40">Bidder Code</th>
+                      <th className="py-2.5 px-4 font-semibold w-36">Bidder Code</th>
                       <th className="py-2.5 px-4 font-semibold">Bidder Name</th>
+                      <th className="py-2.5 px-4 font-semibold w-48">Location</th>
                       <th className="py-2.5 px-4 font-semibold w-28 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
                     {paginatedBidders.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="p-8 text-center text-slate-500 dark:text-slate-400">
+                        <td colSpan={5} className="p-8 text-center text-slate-500 dark:text-slate-400">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <Building className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                             <p className="text-sm font-medium">No bidders found matching your search.</p>
@@ -282,6 +344,9 @@ export default function Bidders() {
                           </td>
                           <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
                             {b.name}
+                          </td>
+                          <td className="py-2.5 px-4 text-xs font-medium text-slate-600 dark:text-slate-300">
+                            {b.location || b.address || '-'}
                           </td>
                           <td className="py-2.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -316,7 +381,7 @@ export default function Bidders() {
                     <select
                       value={perPage}
                       onChange={(e) => setPerPage(Number(e.target.value))}
-                      className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-lg text-xs py-1 pl-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value={10}>10</option>
                       <option value={25}>25</option>
@@ -370,7 +435,7 @@ export default function Bidders() {
                     </p>
                   ) : (
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Update bidder company name or identifier code.
+                      Update bidder company name, code, or location.
                     </p>
                   )}
                 </div>
@@ -407,6 +472,12 @@ export default function Bidders() {
                         placeholder="e.g. BDR-123" />
                       {errors.bidder_code && <p className="mt-1 text-xs text-red-600">{errors.bidder_code}</p>}
                     </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Location</label>
+                      <input type="text" value={data.location} onChange={e => setData('location', e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm"
+                        placeholder="e.g. China / Philippines / Germany" />
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -436,7 +507,7 @@ export default function Bidders() {
                               )}
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                               <div>
                                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                                   Company / Bidder Name <span className="text-rose-500">*</span>
@@ -465,6 +536,19 @@ export default function Bidders() {
                                   className={`w-full px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${codeError ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
                                 />
                                 {codeError && <p className="mt-1 text-xs text-red-600">{codeError}</p>}
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                  Location
+                                </label>
+                                <input
+                                  type="text"
+                                  value={bidder.location || ''}
+                                  onChange={e => updateBidderRow(index, 'location', e.target.value)}
+                                  placeholder="e.g. Philippines / China"
+                                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                                />
                               </div>
                             </div>
                           </div>
@@ -513,6 +597,13 @@ export default function Bidders() {
         isProcessing={processing}
         confirmText="Delete"
         confirmColor="rose"
+      />
+
+      <ImportBiddersModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportCsv}
+        isProcessing={isImporting}
       />
     </div>
   );
