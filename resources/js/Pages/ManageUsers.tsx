@@ -170,7 +170,7 @@ export default function ManageUsers() {
                 <button
                   onClick={() => router.visit('/catalog')}
                   className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors shrink-0"
-                  title="Back to Catalog"
+                  title="Back to Master Projects"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>

@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { router, useForm, usePage } from '@inertiajs/react';
-import { Search, Plus, Edit2, Trash2, X, Check, Eye, Filter, ArchiveRestore, ChevronLeft, ChevronRight, Upload, Package, Boxes, DollarSign } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Check, Eye, Filter, ArchiveRestore, ChevronLeft, ChevronRight, Upload, Package, Boxes, DollarSign, Award } from 'lucide-react';
 import { Item, Category, AuthUser, Bidder } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 import ImportItemsModal from './ImportItemsModal';
 import { useDataTable } from '../hooks/useDataTable';
+import ItemStatusBadge, { ITEM_STATUSES } from './ItemStatusBadge';
 
 interface ManageItemsProps {
   items: Item[];
@@ -24,6 +25,8 @@ type ItemFormData = {
   name: string;
   description: string;
   category_id: string;
+  status: string;
+  awarded_bidder_id: string;
   unit_type: string;
   unit_cost: string;
   quantity: string;
@@ -58,8 +61,9 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
     
     let matchesStatus = true;
     if (status === 'all') matchesStatus = !item.deleted_at;
-    if (status === 'active') matchesStatus = !item.deleted_at;
-    if (status === 'archived') matchesStatus = !!item.deleted_at;
+    else if (status === 'archived') matchesStatus = !!item.deleted_at;
+    else if (status === 'active') matchesStatus = (!item.deleted_at) && ((item.status || 'Active') === 'Active');
+    else matchesStatus = (!item.deleted_at) && ((item.status || 'Active') === status);
     
     return matchesSearch && matchesStatus;
   }, 'all');
@@ -69,18 +73,43 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
     name: '',
     description: '',
     category_id: '',
+    status: 'Active',
+    awarded_bidder_id: '',
     unit_type: '',
     unit_cost: '',
     quantity: '1',
     bidders: [],
   });
 
+  const quotationBidders = useMemo(() => {
+    return data.bidders
+      .filter((bInput) => Boolean(bInput.id))
+      .map((bInput) => {
+        const bidderObj = bidders.find((b) => b.id.toString() === bInput.id.toString());
+        return {
+          id: bInput.id,
+          name: bidderObj?.name || `Bidder #${bInput.id}`,
+          bidder_code: bidderObj?.bidder_code,
+          unit_cost: bInput.unit_cost,
+        };
+      });
+  }, [data.bidders, bidders]);
+
   const openAddModal = () => {
     clearErrors();
     reset();
-    setData('category_id', categories[0]?.id.toString() || '');
-    setData('quantity', '1');
-    setData('bidders', []);
+    setData({
+      item_code: '',
+      name: '',
+      description: '',
+      category_id: categories[0]?.id.toString() || '',
+      status: 'Active',
+      awarded_bidder_id: '',
+      unit_type: '',
+      unit_cost: '',
+      quantity: '1',
+      bidders: [],
+    });
     setEditingItem(null);
     setIsModalOpen(true);
   };
@@ -92,6 +121,8 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
       name: item.name,
       description: item.description || '',
       category_id: item.category_id.toString(),
+      status: item.status || 'Active',
+      awarded_bidder_id: item.awarded_bidder_id ? item.awarded_bidder_id.toString() : '',
       unit_type: item.unit_type,
       unit_cost: item.unit_cost.toString(),
       quantity: item.quantity.toString(),
@@ -111,6 +142,8 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
       name: data.name,
       description: data.description,
       category_id: data.category_id,
+      status: data.status || 'Active',
+      awarded_bidder_id: data.status === 'Awarded' && data.awarded_bidder_id ? data.awarded_bidder_id : null,
       unit_type: data.unit_type,
       unit_cost: data.unit_cost,
       quantity: data.quantity,
@@ -340,8 +373,12 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
                 onChange={(e) => setStatusFilter(e.target.value as any)}
                 className="w-full pl-8 pr-7 py-1.5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none shadow-sm cursor-pointer"
               >
-                <option value="all">All Items</option>
-                <option value="active">Active Items</option>
+                <option value="all">All Statuses</option>
+                {ITEM_STATUSES.map((st) => (
+                  <option key={st} value={st}>
+                    {st}
+                  </option>
+                ))}
                 <option value="archived">Archived</option>
               </select>
             </div>
@@ -409,6 +446,8 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
                 <th className="py-2.5 px-3.5 font-semibold">Unit Cost</th>
                 <th className="py-2.5 px-3.5 font-semibold w-20">Qty</th>
                 <th className="py-2.5 px-3.5 font-semibold">Calculated ABC</th>
+                <th className="py-2.5 px-3.5 font-semibold text-blue-600 dark:text-blue-400">Winning Cost</th>
+                <th className="py-2.5 px-3.5 font-semibold text-emerald-600 dark:text-emerald-400">Winning ABC</th>
                 <th className="py-2.5 px-3.5 font-semibold w-24">Status</th>
                 <th className="py-2.5 px-3.5 font-semibold w-24 text-right">Actions</th>
               </tr>
@@ -416,7 +455,7 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
               {paginatedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={11} className="p-8 text-center text-slate-500 dark:text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Boxes className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                       <p className="text-sm font-medium">No procurement items found.</p>
@@ -434,6 +473,17 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
               ) : (
                 paginatedItems.map((item) => {
                   const cat = categories.find((c) => c.id === item.category_id);
+                  const winningCost = item.awarded_unit_cost ?? (
+                    item.status === 'Awarded' && item.awarded_bidder_id && item.bidders
+                      ? (item.bidders.find(b => b.id === item.awarded_bidder_id)?.pivot?.unit_cost != null
+                          ? Number(item.bidders.find(b => b.id === item.awarded_bidder_id)!.pivot!.unit_cost)
+                          : null)
+                      : null
+                  );
+                  const winningAbc = item.awarded_abc ?? (
+                    winningCost !== null ? winningCost * Number(item.quantity) : null
+                  );
+
                   return (
                     <tr
                       key={item.id}
@@ -465,26 +515,41 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
                           {cat?.name || 'Unknown'}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3.5 font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                      <td className="py-2.5 px-3.5 font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm whitespace-nowrap">
                         ₱{Number(item.unit_cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         <span className="text-slate-400 dark:text-slate-500 font-normal text-xs ml-1">/{item.unit_type}</span>
                       </td>
                       <td className="py-2.5 px-3.5 font-medium text-slate-800 dark:text-slate-200 text-xs sm:text-sm">
                         {item.quantity}
                       </td>
-                      <td className="py-2.5 px-3.5 font-bold text-blue-600 dark:text-blue-400 text-xs sm:text-sm">
+                      <td className="py-2.5 px-3.5 font-bold text-blue-600 dark:text-blue-400 text-xs sm:text-sm whitespace-nowrap">
                         ₱{Number(item.abc).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="py-2.5 px-3.5">
-                        {!item.deleted_at ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
-                            Active
+                      <td className="py-2.5 px-3.5 whitespace-nowrap">
+                        {winningCost !== null ? (
+                          <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                            ₱{Number(winningCost).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            <span className="text-slate-400 dark:text-slate-500 font-normal text-xs ml-1">/{item.unit_type}</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                            Archived
-                          </span>
+                          <span className="text-slate-300 dark:text-slate-600 text-xs">—</span>
                         )}
+                      </td>
+                      <td className="py-2.5 px-3.5 whitespace-nowrap">
+                        {winningAbc !== null ? (
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">
+                            ₱{Number(winningAbc).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-slate-600 text-xs">—</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3.5">
+                        <ItemStatusBadge 
+                          status={item.status} 
+                          isArchived={!!item.deleted_at} 
+                          awardedBidderName={item.awarded_bidder?.name} 
+                        />
                       </td>
                       <td className="py-2.5 px-3.5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
@@ -593,7 +658,7 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                    {editingItem ? 'Edit Catalog Item' : 'Add New Item'}
+                    {editingItem ? 'Edit Project Item' : 'Add New Item'}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {editingItem ? `Editing specifications for ${data.item_code}` : 'Enter item specifications and vendor bidder pricing.'}
@@ -611,8 +676,8 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
             {/* Modal Form Content */}
             <div className="overflow-y-auto flex-1 p-5 sm:p-6 custom-scrollbar">
               <form id="item-form" onSubmit={handleSubmit} className="space-y-4">
-                {/* 2-Column: Code & Category */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Code, Category, and Status */}
+                <div className={`grid grid-cols-1 ${editingItem ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3.5`}>
                   {editingItem && (
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -627,7 +692,7 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
                       />
                     </div>
                   )}
-                  <div className={!editingItem ? 'sm:col-span-2' : ''}>
+                  <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       Category <span className="text-rose-500">*</span>
                     </label>
@@ -648,7 +713,110 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
                     </select>
                     {errors.category_id && <p className="mt-1 text-xs text-red-600">{errors.category_id}</p>}
                   </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Status <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      required
+                      value={data.status}
+                      onChange={(e) => {
+                        const newStatus = e.target.value;
+                        setData(prev => ({
+                          ...prev,
+                          status: newStatus,
+                          awarded_bidder_id: newStatus === 'Awarded' ? prev.awarded_bidder_id : '',
+                        }));
+                      }}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm dark:text-white cursor-pointer"
+                    >
+                      {ITEM_STATUSES.map((st) => (
+                        <option key={st} value={st}>
+                          {st}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
+                {/* Awarded Bidder Selector (Only shown when status is Awarded) */}
+                {data.status === 'Awarded' && (() => {
+                  const selectedQuotation = quotationBidders.find((qb) => qb.id.toString() === data.awarded_bidder_id.toString());
+                  const winningCostNum = selectedQuotation ? Number(selectedQuotation.unit_cost || 0) : null;
+                  const winningAbcNum = winningCostNum !== null ? winningCostNum * Number(data.quantity || 0) : null;
+                  const baselineAbcNum = Number(data.unit_cost || 0) * Number(data.quantity || 0);
+                  const diffAbc = winningAbcNum !== null ? baselineAbcNum - winningAbcNum : null;
+
+                  return (
+                    <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/30 rounded-xl border border-blue-200/80 dark:border-blue-800/80 space-y-2.5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <label className="text-xs font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                          <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          Awarded To Bidder <span className="text-rose-500">*</span>
+                        </label>
+                        <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
+                          Options from Vendor Bidder Quotations
+                        </span>
+                      </div>
+
+                      <select
+                        required={data.status === 'Awarded'}
+                        value={data.awarded_bidder_id}
+                        onChange={(e) => setData('awarded_bidder_id', e.target.value)}
+                        className={`w-full px-3 py-2 bg-white dark:bg-slate-800 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm dark:text-white cursor-pointer ${
+                          errors.awarded_bidder_id ? 'border-red-400 dark:border-red-500' : 'border-blue-200 dark:border-blue-700'
+                        }`}
+                      >
+                        <option value="">Select winning bidder...</option>
+                        {quotationBidders.map((qb) => (
+                          <option key={qb.id} value={qb.id}>
+                            {qb.name} {qb.bidder_code ? `(${qb.bidder_code})` : ''} — ₱{Number(qb.unit_cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </option>
+                        ))}
+                      </select>
+
+                      {quotationBidders.length === 0 ? (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                          ⚠️ No bidders added in Vendor Bidder Quotations yet. Add quotations below to select the awarded bidder.
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Choose which vendor quotation won the bid award for this item.
+                        </p>
+                      )}
+
+                      {selectedQuotation && winningCostNum !== null && (
+                        <div className="pt-2.5 border-t border-blue-200/70 dark:border-blue-800/70 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                          <div className="bg-white/90 dark:bg-slate-900/60 p-2.5 rounded-lg border border-blue-100 dark:border-blue-900/50">
+                            <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Winning Unit Cost</div>
+                            <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                              ₱{Number(winningCostNum).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              <span className="text-[10px] text-slate-400 font-normal ml-1">/{data.unit_type || 'unit'}</span>
+                            </div>
+                          </div>
+                          <div className="bg-white/90 dark:bg-slate-900/60 p-2.5 rounded-lg border border-blue-100 dark:border-blue-900/50">
+                            <div className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-300">Winning Total ABC</div>
+                            <div className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                              ₱{Number(winningAbcNum).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                          </div>
+                          <div className="bg-white/90 dark:bg-slate-900/60 p-2.5 rounded-lg border border-blue-100 dark:border-blue-900/50 col-span-2 sm:col-span-1">
+                            <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Budget Variance</div>
+                            <div className={`text-xs sm:text-sm font-bold ${
+                              diffAbc !== null && diffAbc >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                            }`}>
+                              {diffAbc !== null && diffAbc >= 0
+                                ? `₱${diffAbc.toLocaleString(undefined, { minimumFractionDigits: 2 })} (Savings)`
+                                : `₱${Math.abs(diffAbc || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} (Over)`}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {errors.awarded_bidder_id && <p className="mt-1 text-xs text-red-600 font-semibold">{errors.awarded_bidder_id}</p>}
+                    </div>
+                  );
+                })()}
 
                 {/* Name */}
                 <div>
@@ -745,13 +913,32 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
                   </div>
 
                   {/* Highlighted ABC Pill */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700 text-xs">
-                    <span className="font-semibold text-slate-600 dark:text-slate-300">
-                      Calculated Budget (ABC):
-                    </span>
-                    <span className="font-mono font-bold text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 px-2.5 py-1 rounded-lg border border-blue-200/60 dark:border-blue-800/60">
-                      ₱{(Number(data.unit_cost || 0) * Number(data.quantity || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700 text-xs gap-2">
+                    <div className="flex items-center justify-between sm:justify-start gap-2">
+                      <span className="font-semibold text-slate-600 dark:text-slate-300">
+                        Baseline Budget (ABC):
+                      </span>
+                      <span className="font-mono font-bold text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 px-2.5 py-1 rounded-lg border border-blue-200/60 dark:border-blue-800/60">
+                        ₱{(Number(data.unit_cost || 0) * Number(data.quantity || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                    {data.status === 'Awarded' && (() => {
+                      const qb = quotationBidders.find((b) => b.id.toString() === data.awarded_bidder_id.toString());
+                      if (!qb) return null;
+                      const winCost = Number(qb.unit_cost || 0);
+                      const winAbc = winCost * Number(data.quantity || 0);
+                      return (
+                        <div className="flex items-center justify-between sm:justify-start gap-2">
+                          <span className="font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                            <Award className="w-3.5 h-3.5 text-amber-500" /> Winning ABC:
+                          </span>
+                          <span className="font-mono font-bold text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200/70 dark:border-emerald-800/70">
+                            ₱{winAbc.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -769,67 +956,106 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
                   </div>
 
                   <div className="space-y-2">
-                    {data.bidders.map((bidderInput, index) => (
-                      <div
-                        key={index}
-                        className="p-3 bg-slate-50/90 dark:bg-slate-700/30 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-col sm:flex-row gap-2.5 sm:items-center"
-                      >
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[11px] font-bold shrink-0">
-                            {index + 1}
-                          </span>
-                          <select
-                            required
-                            value={bidderInput.id}
-                            onChange={(e) => {
-                              const updated = [...data.bidders];
-                              updated[index].id = e.target.value;
-                              setData('bidders', updated);
-                            }}
-                            className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-xs dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="" disabled>Select Bidder</option>
-                            {bidders.map((b) => (
-                              <option key={b.id} value={b.id.toString()}>
-                                {b.name} ({b.bidder_code || 'No Code'})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="flex items-center gap-2 w-full sm:w-44">
-                          <div className="relative flex-1">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-semibold">₱</span>
-                            <input
+                    {data.bidders.map((bidderInput, index) => {
+                      const isAwardee = data.status === 'Awarded' && Boolean(bidderInput.id) && data.awarded_bidder_id === bidderInput.id;
+                      return (
+                        <div
+                          key={index}
+                          className={`p-3 rounded-xl border flex flex-col sm:flex-row gap-2.5 sm:items-center transition-all ${
+                            isAwardee
+                              ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-300 dark:border-blue-750 ring-1 ring-blue-400/40'
+                              : 'bg-slate-50/90 dark:bg-slate-700/30 border-slate-200/80 dark:border-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                              isAwardee
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400'
+                            }`}>
+                              {index + 1}
+                            </span>
+                            <select
                               required
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={bidderInput.unit_cost}
+                              value={bidderInput.id}
                               onChange={(e) => {
+                                const newId = e.target.value;
+                                const oldId = bidderInput.id;
                                 const updated = [...data.bidders];
-                                updated[index].unit_cost = e.target.value;
-                                setData('bidders', updated);
+                                updated[index].id = newId;
+                                setData(prev => ({
+                                  ...prev,
+                                  bidders: updated,
+                                  awarded_bidder_id: prev.awarded_bidder_id === oldId ? newId : prev.awarded_bidder_id,
+                                }));
                               }}
-                              className="w-full pl-6 pr-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-semibold dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Bidder Cost"
-                            />
+                              className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-xs dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="" disabled>Select Bidder</option>
+                              {bidders.map((b) => (
+                                <option key={b.id} value={b.id.toString()}>
+                                  {b.name} ({b.bidder_code || 'No Code'})
+                                </option>
+                              ))}
+                            </select>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = data.bidders.filter((_, i) => i !== index);
-                              setData('bidders', updated);
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
-                            title="Remove Bidder"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <div className="relative flex-1 sm:w-36">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-semibold">₱</span>
+                              <input
+                                required
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={bidderInput.unit_cost}
+                                onChange={(e) => {
+                                  const updated = [...data.bidders];
+                                  updated[index].unit_cost = e.target.value;
+                                  setData('bidders', updated);
+                                }}
+                                className="w-full pl-6 pr-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-semibold dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Bidder Cost"
+                              />
+                            </div>
+
+                            {data.status === 'Awarded' && bidderInput.id && (
+                              isAwardee ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0">
+                                  <Award className="w-3 h-3 text-blue-600 dark:text-blue-400" /> Winner
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setData('awarded_bidder_id', bidderInput.id)}
+                                  className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/40 px-2 py-1 rounded transition-colors shrink-0"
+                                  title="Mark this bidder as the awarded winner"
+                                >
+                                  Award
+                                </button>
+                              )
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const removedId = data.bidders[index]?.id;
+                                const updated = data.bidders.filter((_, i) => i !== index);
+                                setData(prev => ({
+                                  ...prev,
+                                  bidders: updated,
+                                  awarded_bidder_id: prev.awarded_bidder_id === removedId ? '' : prev.awarded_bidder_id,
+                                }));
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
+                              title="Remove Bidder"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     <button
                       type="button"

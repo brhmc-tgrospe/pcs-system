@@ -3,7 +3,7 @@ import { usePage } from '@inertiajs/react';
 import Sidebar from '../Components/Sidebar';
 import Header from '../Components/Header';
 import Dashboard from '../Components/Dashboard';
-import MasterCatalog from '../Components/MasterCatalog';
+import MasterProjects from '../Components/MasterProjects';
 import ManageItems from '../Components/ManageItems';
 import ManageCategories from '../Components/ManageCategories';
 import PrintReport from '../Components/PrintReport';
@@ -102,10 +102,11 @@ export default function CatalogApp() {
               recentLogs={recentLogs}
               onNavigate={navigate}
               user={user}
+              onViewItem={setViewingItem}
             />
           )}
           {currentView === 'catalog' && (
-            <MasterCatalog
+            <MasterProjects
               items={items}
               categories={categories}
               onViewItem={setViewingItem}

@@ -127,4 +127,22 @@ class BidderTest extends TestCase
             'bidder_code' => 'BDR-ORIG-UPDATED',
         ]);
     }
+
+    public function test_can_create_bidder_with_brand_name_and_origin(): void
+    {
+        $response = $this->actingAs($this->adminUser)->post('/catalog/bidders', [
+            'name' => 'Biologix Supplier Ltd.',
+            'bidder_code' => 'BDR-BIO-1',
+            'brand_name' => 'Biologix',
+            'origin' => 'China',
+        ]);
+
+        $response->assertSessionHas('success', 'Bidder added successfully.');
+        $this->assertDatabaseHas('bidders', [
+            'name' => 'Biologix Supplier Ltd.',
+            'bidder_code' => 'BDR-BIO-1',
+            'brand_name' => 'Biologix',
+            'country_of_origin' => 'China',
+        ]);
+    }
 }

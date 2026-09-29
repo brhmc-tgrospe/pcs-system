@@ -27,6 +27,8 @@ type BidderItemInput = {
   email?: string;
   address?: string;
   location?: string;
+  brand_name?: string;
+  country_of_origin?: string;
 };
 
 type BidderFormData = {
@@ -36,6 +38,8 @@ type BidderFormData = {
   email: string;
   address: string;
   location: string;
+  brand_name: string;
+  country_of_origin: string;
   bidder_code: string;
   bidders: BidderItemInput[];
 };
@@ -77,6 +81,8 @@ export default function Bidders() {
     email: '',
     address: '',
     location: '',
+    brand_name: '',
+    country_of_origin: '',
   });
 
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<BidderFormData>({
@@ -86,13 +92,21 @@ export default function Bidders() {
     email: '',
     address: '',
     location: '',
+    brand_name: '',
+    country_of_origin: '',
     bidder_code: '',
     bidders: [createEmptyBidder()],
   });
 
   const filteredBidders = bidders.filter(b => {
     const term = searchTerm.toLowerCase();
-    return b.name.toLowerCase().includes(term) || b.id.toString().includes(term) || (b.bidder_code && b.bidder_code.toLowerCase().includes(term)) || (b.location && b.location.toLowerCase().includes(term));
+    return b.name.toLowerCase().includes(term) ||
+      b.id.toString().includes(term) ||
+      (b.bidder_code && b.bidder_code.toLowerCase().includes(term)) ||
+      (b.brand_name && b.brand_name.toLowerCase().includes(term)) ||
+      (b.country_of_origin && b.country_of_origin.toLowerCase().includes(term)) ||
+      (b.origin && b.origin.toLowerCase().includes(term)) ||
+      (b.location && b.location.toLowerCase().includes(term));
   });
 
   const totalPages = Math.ceil(filteredBidders.length / perPage) || 1;
@@ -108,6 +122,8 @@ export default function Bidders() {
       email: '',
       address: '',
       location: '',
+      brand_name: '',
+      country_of_origin: '',
       bidder_code: '',
       bidders: [createEmptyBidder()],
     });
@@ -124,6 +140,8 @@ export default function Bidders() {
       email: b.email || '',
       address: b.address || '',
       location: b.location || '',
+      brand_name: b.brand_name || '',
+      country_of_origin: b.country_of_origin || b.origin || '',
       bidder_code: b.bidder_code || '',
       bidders: [],
     });
@@ -223,7 +241,7 @@ export default function Bidders() {
                 <button
                   onClick={() => router.visit('/catalog')}
                   className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                  title="Back to Catalog"
+                  title="Back to Master Projects"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -291,7 +309,7 @@ export default function Bidders() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Search bidders by code, name, or ID..."
+                    placeholder="Search bidders by code, name, brand, origin, or ID..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-9 pr-3.5 py-1.5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm dark:text-slate-100 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
@@ -315,14 +333,15 @@ export default function Bidders() {
                       <th className="py-2.5 px-4 font-semibold w-20">ID</th>
                       <th className="py-2.5 px-4 font-semibold w-36">Bidder Code</th>
                       <th className="py-2.5 px-4 font-semibold">Bidder Name</th>
-                      <th className="py-2.5 px-4 font-semibold w-48">Location</th>
+                      <th className="py-2.5 px-4 font-semibold w-40">Brand Name</th>
+                      <th className="py-2.5 px-4 font-semibold w-36">Origin</th>
                       <th className="py-2.5 px-4 font-semibold w-28 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
                     {paginatedBidders.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-8 text-center text-slate-500 dark:text-slate-400">
+                        <td colSpan={6} className="p-8 text-center text-slate-500 dark:text-slate-400">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <Building className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                             <p className="text-sm font-medium">No bidders found matching your search.</p>
@@ -354,8 +373,23 @@ export default function Bidders() {
                           <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
                             {b.name}
                           </td>
-                          <td className="py-2.5 px-4 text-xs font-medium text-slate-600 dark:text-slate-300">
-                            {b.location || b.address || '-'}
+                          <td className="py-2.5 px-4">
+                            {b.brand_name ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                                {b.brand_name}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            {(b.country_of_origin || b.origin) ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
+                                {b.country_of_origin || b.origin}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
+                            )}
                           </td>
                           <td className="py-2.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -444,7 +478,7 @@ export default function Bidders() {
                     </p>
                   ) : (
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Update bidder company name, code, or location.
+                      Update bidder company name, code, brand name, or origin.
                     </p>
                   )}
                 </div>
@@ -481,11 +515,19 @@ export default function Bidders() {
                         placeholder="e.g. BDR-123" />
                       {errors.bidder_code && <p className="mt-1 text-xs text-red-600">{errors.bidder_code}</p>}
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Location</label>
-                      <input type="text" value={data.location} onChange={e => setData('location', e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm"
-                        placeholder="e.g. China / Philippines / Germany" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Brand Name</label>
+                        <input type="text" value={data.brand_name} onChange={e => setData('brand_name', e.target.value)}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm"
+                          placeholder="e.g. Generic, Biologix, Ormed" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Origin</label>
+                        <input type="text" value={data.country_of_origin} onChange={e => setData('country_of_origin', e.target.value)}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm"
+                          placeholder="e.g. Phils., China, Germany" />
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -516,7 +558,7 @@ export default function Bidders() {
                               )}
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
                                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                                   Company / Bidder Name <span className="text-rose-500">*</span>
@@ -549,13 +591,26 @@ export default function Bidders() {
 
                               <div>
                                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                                  Location
+                                  Brand Name
                                 </label>
                                 <input
                                   type="text"
-                                  value={bidder.location || ''}
-                                  onChange={e => updateBidderRow(index, 'location', e.target.value)}
-                                  placeholder="e.g. Philippines / China"
+                                  value={bidder.brand_name || ''}
+                                  onChange={e => updateBidderRow(index, 'brand_name', e.target.value)}
+                                  placeholder="e.g. Biologix, Generic"
+                                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                  Origin
+                                </label>
+                                <input
+                                  type="text"
+                                  value={bidder.country_of_origin || ''}
+                                  onChange={e => updateBidderRow(index, 'country_of_origin', e.target.value)}
+                                  placeholder="e.g. Phils., China, Germany"
                                   className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
                                 />
                               </div>

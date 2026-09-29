@@ -32,7 +32,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'catalog', label: 'Master Catalog', icon: BookOpen },
+    { id: 'catalog', label: 'Master Projects', icon: BookOpen },
     ...(isAdmin ? [
       { id: 'manage_items', label: 'Manage Items', icon: Boxes },
       { id: 'manage_categories', label: 'Categories', icon: Tags },
@@ -41,7 +41,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
   ];
 
   const reportItems = [
-    { id: 'print_report', label: 'Print Catalog', icon: FileBarChart },
+    { id: 'print_report', label: 'Print Project Report', icon: FileBarChart },
     ...(isAdmin ? [
       { id: 'activity_logs', label: 'Activity Logs', icon: Settings, href: '/activity-logs' },
       { id: 'users', label: 'Manage Users', icon: Users, href: '/users' },
@@ -63,7 +63,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
 
       <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8 custom-scrollbar">
         <div>
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-3">Catalog System</div>
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-3">Project System</div>
           <nav className="space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;

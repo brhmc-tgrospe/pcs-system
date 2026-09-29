@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { PackageSearch, Boxes, Tags, AlertCircle, ArrowUpRight, Activity, Clock, Layers, LayoutDashboard, PhilippinePeso } from 'lucide-react';
+import { 
+  PackageSearch, Boxes, Tags, AlertCircle, ArrowUpRight, Activity, 
+  Layers, LayoutDashboard, Trophy 
+} from 'lucide-react';
 import { Item, Category, ActivityLogEntry, AuthUser } from '../types';
 import ActivityLogsModal from './ActivityLogsModal';
 import StatDetailsModal from './StatDetailsModal';
@@ -11,24 +14,35 @@ interface DashboardProps {
   recentLogs: ActivityLogEntry[];
   onNavigate: (view: string) => void;
   user: AuthUser;
+  onViewItem?: (item: Item) => void;
 }
 
-export default function Dashboard({ items, categories, recentLogs, onNavigate, user }: DashboardProps) {
+export default function Dashboard({ items, categories, recentLogs, onNavigate, user, onViewItem }: DashboardProps) {
   const [showLogsModal, setShowLogsModal] = useState(false);
   const [activeStat, setActiveStat] = useState<{ title: string; data: any[]; type: 'items' | 'categories' } | null>(null);
-  
+
   const archivedItems = items.filter(item => item.deleted_at !== null);
   const activeItems = items.filter(item => item.deleted_at === null);
   const activeCategories = categories.filter(category => category.deleted_at === null);
+  const awardedItems = activeItems.filter(item => item.status === 'Awarded');
 
   const stats = [
     {
-      label: 'Catalog Items',
+      label: 'Project Items',
       value: activeItems.length.toLocaleString(),
       icon: Boxes,
       color: 'text-blue-600 dark:text-blue-400',
       bg: 'bg-blue-50 dark:bg-blue-950/50 border border-blue-200/60 dark:border-blue-800/60',
       rawData: activeItems,
+      type: 'items' as const
+    },
+    {
+      label: 'Awarded Items',
+      value: awardedItems.length.toLocaleString(),
+      icon: Trophy,
+      color: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60',
+      rawData: awardedItems,
       type: 'items' as const
     },
     {
@@ -41,7 +55,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
       type: 'categories' as const
     },
     {
-      label: 'Total Catalog Value',
+      label: 'Total Projects Value',
       value: '₱' + activeItems.reduce((sum, item) => sum + (Number(item.abc) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
       icon: PackageSearch,
       color: 'text-emerald-600 dark:text-emerald-400',
@@ -49,18 +63,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
       rawData: activeItems,
       type: 'items' as const
     },
-    {
-      label: 'Archived Items',
-      value: archivedItems.length.toLocaleString(),
-      icon: AlertCircle,
-      color: 'text-amber-600 dark:text-amber-400',
-      bg: 'bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60',
-      rawData: archivedItems,
-      type: 'items' as const
-    },
   ];
-
-  const visibleStats = stats.filter(stat => stat.label !== 'Archived Items' || user.role === 'developer');
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto h-full overflow-y-auto flex flex-col gap-5 custom-scrollbar">
@@ -75,32 +78,44 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
               PCS Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Procurement Catalog System overview and live activity feed.
+              Procurement Project System overview, awarded contracts, and live activity feed.
             </p>
           </div>
         </div>
+
+        {/* Developer Archived Items quick-access badge */}
+        {user.role === 'developer' && archivedItems.length > 0 && (
+          <button
+            onClick={() => setActiveStat({ title: 'Archived Items', data: archivedItems, type: 'items' })}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200/70 dark:border-rose-800/70 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer self-start sm:self-auto"
+            title="View archived items"
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span>{archivedItems.length} Archived {archivedItems.length === 1 ? 'Item' : 'Items'}</span>
+          </button>
+        )}
       </div>
 
-      {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {visibleStats.map((stat, idx) => {
+      {/* Stats Cards Grid (Even 4-column layout) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+        {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
             <div
               key={idx}
-              className="bg-white dark:bg-slate-800/95 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600 transition-all flex flex-col justify-between group"
+              onClick={() => setActiveStat({ title: stat.label, data: stat.rawData, type: stat.type })}
+              className="bg-white dark:bg-slate-800/95 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className={`p-2 rounded-xl ${stat.bg} ${stat.color}`}>
-                  <Icon className="w-4 h-4" />
+                <div className={`p-2.5 rounded-xl ${stat.bg} ${stat.color}`}>
+                  <Icon className="w-4.5 h-4.5" />
                 </div>
-                <button 
-                  onClick={() => setActiveStat({ title: stat.label, data: stat.rawData, type: stat.type })}
-                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer transition-colors"
+                <div 
+                  className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 p-1.5 rounded-lg group-hover:bg-slate-100 dark:group-hover:bg-slate-700/60 transition-colors"
                   title="View full list"
                 >
                   <ArrowUpRight className="w-4 h-4" />
-                </button>
+                </div>
               </div>
               <div>
                 <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
@@ -115,10 +130,10 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
         })}
       </div>
 
-      {/* Main Content Grid: Activity Feed & Categories */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+      {/* Main Content Grid: Balanced 50/50 2-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 flex-1 min-h-[440px]">
         {/* Recent Activity Card */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800/95 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/80 overflow-hidden flex flex-col min-h-[420px]">
+        <div className="bg-white dark:bg-slate-800/95 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/80 overflow-hidden flex flex-col h-full min-h-[440px]">
           <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/60 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="p-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-lg">
@@ -150,7 +165,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
         </div>
 
         {/* Category Breakdown Card */}
-        <div className="bg-white dark:bg-slate-800/95 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/80 overflow-hidden flex flex-col min-h-[420px]">
+        <div className="bg-white dark:bg-slate-800/95 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/80 overflow-hidden flex flex-col h-full min-h-[440px]">
           <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/60 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
@@ -158,16 +173,16 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
               </div>
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">Category Breakdown</h2>
             </div>
-            <span className="text-xs font-medium text-slate-400">
-              {activeCategories.length} categories
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
+              {activeCategories.length} Categories
             </span>
           </div>
-          <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
-            <ul className="space-y-1">
+          <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+            <ul className="space-y-1.5">
               {activeCategories.map(cat => (
                 <li
                   key={cat.id}
-                  className="px-3.5 py-2.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded-xl transition-colors group"
+                  className="px-3.5 py-2.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded-xl transition-colors group border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60"
                 >
                   <div className="flex items-center gap-2.5 min-w-0 pr-2">
                     <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
@@ -175,7 +190,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
                       {cat.name}
                     </span>
                   </div>
-                  <span className="bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md text-[11px] font-semibold shrink-0 border border-slate-200/50 dark:border-slate-600/50">
+                  <span className="bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded-md text-[11px] font-semibold shrink-0 border border-slate-200/50 dark:border-slate-600/50">
                     {cat.items_count} items
                   </span>
                 </li>
@@ -195,6 +210,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
         title={activeStat?.title || ''}
         data={activeStat?.data || []}
         type={activeStat?.type || 'items'}
+        onViewItem={onViewItem}
       />
     </div>
   );

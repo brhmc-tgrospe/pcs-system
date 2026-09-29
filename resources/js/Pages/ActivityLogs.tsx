@@ -59,7 +59,7 @@ export default function ActivityLogs() {
         <main className={`flex-1 overflow-y-auto relative ${user.is_impersonating ? 'mt-10' : ''} p-6`}>
           <div className="max-w-7xl mx-auto h-full flex flex-col">
             <div className="flex items-center gap-4 mb-6">
-              <button onClick={() => router.visit('/catalog')} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors">
+              <button onClick={() => router.visit('/catalog')} title="Back to Master Projects" className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors">
                 <ArrowLeft className="w-6 h-6" />
               </button>
               <div className="flex items-center gap-4">

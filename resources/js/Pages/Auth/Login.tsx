@@ -39,7 +39,7 @@ export default function Login({ status }: LoginProps) {
               <img src="/pcs-logo.png" alt="PCS Logo" className="w-16 h-16 object-contain rounded-2xl shadow-md border border-white/10" />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">PCS Portal</h1>
-            <p className="text-blue-100/80 font-medium text-sm mt-1">BRHMC Procurement Catalog System</p>
+            <p className="text-blue-100/80 font-medium text-sm mt-1">BRHMC Procurement Project System</p>
           </div>
         </div>
 

@@ -531,7 +531,7 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
                   </h3>
                   {!editingCategory ? (
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Enter one or more categories to add to the catalog taxonomy.
+                      Enter one or more categories to add to the project taxonomy.
                     </p>
                   ) : (
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">

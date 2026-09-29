@@ -44,6 +44,8 @@ class BidderImportController extends Controller
         $emailColIndex = $headerMap['email'] ?? null;
         $addressColIndex = $headerMap['address'] ?? null;
         $locationColIndex = $headerMap['location'] ?? $headerMap['city'] ?? $headerMap['province'] ?? null;
+        $brandNameColIndex = $headerMap['brand name'] ?? $headerMap['brand'] ?? $headerMap['brand_name'] ?? null;
+        $originColIndex = $headerMap['country of origin'] ?? $headerMap['origin'] ?? $headerMap['country_of_origin'] ?? null;
 
         if ($codeColIndex === null) {
             fclose($handle);
@@ -81,6 +83,15 @@ class BidderImportController extends Controller
                 $email = $emailColIndex !== null ? trim($row[$emailColIndex] ?? '') : null;
                 $address = $addressColIndex !== null ? trim($row[$addressColIndex] ?? '') : null;
                 $location = $locationColIndex !== null ? trim($row[$locationColIndex] ?? '') : null;
+                $brandName = $brandNameColIndex !== null ? trim($row[$brandNameColIndex] ?? '') : null;
+                $origin = $originColIndex !== null ? trim($row[$originColIndex] ?? '') : null;
+
+                // If brand/origin not explicitly given but location is, handle comma split if present
+                if (empty($brandName) && empty($origin) && !empty($location) && str_contains($location, ',')) {
+                    $parts = array_map('trim', explode(',', $location, 2));
+                    $brandName = $parts[0] ?? null;
+                    $origin = $parts[1] ?? null;
+                }
 
                 // Validation
                 if (empty($bidderCode)) {
@@ -110,6 +121,8 @@ class BidderImportController extends Controller
                     'email' => $email ?: null,
                     'address' => $address ?: null,
                     'location' => $location ?: null,
+                    'brand_name' => $brandName ?: null,
+                    'country_of_origin' => $origin ?: null,
                 ]);
 
                 DB::commit();

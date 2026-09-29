@@ -28,10 +28,10 @@ export default function PrintReport({ items, categories, onBack }: PrintReportPr
 
   const [isParamModalOpen, setIsParamModalOpen] = useState(false);
 
-  const isAllCatalogSelected = activeItems.length > 0 && selectedItemIds.size === activeItems.length;
+  const isAllProjectsSelected = activeItems.length > 0 && selectedItemIds.size === activeItems.length;
 
-  const handleToggleAllCatalog = () => {
-    if (isAllCatalogSelected) {
+  const handleToggleAllProjects = () => {
+    if (isAllProjectsSelected) {
       setSelectedItemIds(new Set());
     } else {
       setSelectedCategories(categories.map(c => c.id));
@@ -58,7 +58,7 @@ export default function PrintReport({ items, categories, onBack }: PrintReportPr
       if (cat) return `Procurement of ${cat.name}`;
     }
     if (selectedCategories.length === categories.length && categories.length > 1) {
-      return 'Procurement of All Catalog Supplies';
+      return 'Procurement of All Project Supplies';
     }
     return 'Procurement of Medical Supplies';
   }, [selectedCategories, categories]);
@@ -172,7 +172,7 @@ export default function PrintReport({ items, categories, onBack }: PrintReportPr
             onClick={onBack}
             className="text-slate-600 dark:text-slate-400 flex items-center gap-2 hover:text-slate-900 dark:hover:text-white font-medium transition-colors mb-3 text-sm"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Master Catalog
+            <ArrowLeft className="w-4 h-4" /> Back to Master Projects
           </button>
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Report Filters</h2>
@@ -185,15 +185,15 @@ export default function PrintReport({ items, categories, onBack }: PrintReportPr
           {/* Quick Select All Toggle Button */}
           <button
             type="button"
-            onClick={handleToggleAllCatalog}
+            onClick={handleToggleAllProjects}
             className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm ${
-              isAllCatalogSelected
+              isAllProjectsSelected
                 ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 hover:bg-rose-100'
                 : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100'
             }`}
           >
             <CheckSquare className="w-4 h-4" />
-            {isAllCatalogSelected ? 'Deselect Entire Catalog' : `Select All Catalog (${activeItems.length} Items)`}
+            {isAllProjectsSelected ? 'Deselect All Projects' : `Select All Projects (${activeItems.length} Items)`}
           </button>
         </div>
 
@@ -327,7 +327,7 @@ export default function PrintReport({ items, categories, onBack }: PrintReportPr
               </button>
             )}
 
-            {!isAllCatalogSelected && (
+            {!isAllProjectsSelected && (
               <button
                 type="button"
                 onClick={() => {
@@ -358,11 +358,11 @@ export default function PrintReport({ items, categories, onBack }: PrintReportPr
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={handleToggleAllCatalog}
+              onClick={handleToggleAllProjects}
               className="hidden sm:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
             >
               <CheckSquare className="w-4 h-4" />
-              {isAllCatalogSelected ? 'Deselect All' : 'Select All Catalog'}
+              {isAllProjectsSelected ? 'Deselect All' : 'Select All Projects'}
             </button>
             <button
               onClick={handleOpenGenerateModal}

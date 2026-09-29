@@ -35,11 +35,16 @@ export interface Bidder {
   email: string | null;
   address: string | null;
   location?: string | null;
+  brand_name?: string | null;
+  country_of_origin?: string | null;
+  origin?: string | null;
   pivot?: {
     unit_cost: number;
   };
   deleted_at?: string | null;
 }
+
+export type ItemStatus = 'Active' | 'No Bid' | 'Pending Award' | 'Failed Bid' | 'Awarded' | 'Closed';
 
 export interface Item {
   id: number;
@@ -50,6 +55,11 @@ export interface Item {
   unit_cost: number;
   quantity: number;
   abc: number;
+  status?: ItemStatus;
+  awarded_bidder_id?: number | null;
+  awarded_bidder?: Bidder | null;
+  awarded_unit_cost?: number | null;
+  awarded_abc?: number | null;
 
   category_id: number;
   image_url?: string | null;

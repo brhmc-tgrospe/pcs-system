@@ -17,9 +17,11 @@ Route::redirect('/', '/login');
 // Authenticated routes
 Route::middleware(['auth'])->group(function () {
 
-    // Main catalog app
+    // Main projects / catalog app
     Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog');
+    Route::get('/projects', [CatalogController::class, 'index'])->name('projects');
     Route::get('/catalog/search', [SearchController::class, 'index'])->name('catalog.search');
+    Route::get('/projects/search', [SearchController::class, 'index'])->name('projects.search');
 
     // Category CRUD (admin + developer)
     Route::middleware(['role:administrator,developer'])->group(function () {

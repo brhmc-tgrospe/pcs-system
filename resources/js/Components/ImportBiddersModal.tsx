@@ -64,10 +64,10 @@ export default function ImportBiddersModal({
 
   const handleDownloadTemplate = () => {
     const csvContent = [
-      'Bidder Code,Bidder Name,Contact Person,Contact Number,Email,Address,Location',
-      'BDR-001,Alpha Medtech Corporation,Juan Dela Cruz,+63 912 345 6789,contact@alphamed.com,"123 Medical Drive, Manila",Manila City',
-      'BDR-002,Beta Diagnostics Inc.,Maria Santos,+63 920 987 6543,sales@betadiag.com,"456 Science Ave, Quezon City",Quezon City',
-      'BDR-003,Gamma Healthcare Solutions,Pedro Reyes,+63 933 111 2222,info@gammahealth.ph,"789 Pharma Road, Pasig City",Pasig City',
+      'Bidder Code,Bidder Name,Brand Name,Origin,Contact Person,Contact Number,Email,Address',
+      'BDR-001,Alpha Medtech Corporation,Generic,Phils.,Juan Dela Cruz,+63 912 345 6789,contact@alphamed.com,"123 Medical Drive, Manila"',
+      'BDR-002,Beta Diagnostics Inc.,Biologix,China,Maria Santos,+63 920 987 6543,sales@betadiag.com,"456 Science Ave, Quezon City"',
+      'BDR-003,Gamma Healthcare Solutions,Ormed,Germany,Pedro Reyes,+63 933 111 2222,info@gammahealth.ph,"789 Pharma Road, Pasig City"',
     ].join('\r\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -207,6 +207,18 @@ export default function ImportBiddersModal({
                         <td className="p-2.5"><span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Optional</span></td>
                         <td className="p-2.5 font-mono text-[11px]">Valid Email</td>
                         <td className="p-2.5">Official company email address (e.g. <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">contact@alphamed.com</code>)</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-mono font-bold text-blue-600 dark:text-blue-400">Brand Name</td>
+                        <td className="p-2.5"><span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">Optional</span></td>
+                        <td className="p-2.5 font-mono text-[11px]">Text</td>
+                        <td className="p-2.5">Brand name for bidder products (e.g. <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">Generic</code>, <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">Biologix</code>, <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">Ormed</code>)</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-mono font-bold text-blue-600 dark:text-blue-400">Origin</td>
+                        <td className="p-2.5"><span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">Optional</span></td>
+                        <td className="p-2.5 font-mono text-[11px]">Text</td>
+                        <td className="p-2.5">Country of origin (e.g. <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">Phils.</code>, <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">China</code>, <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">Germany</code>)</td>
                       </tr>
                       <tr>
                         <td className="p-2.5 font-mono font-bold text-blue-600 dark:text-blue-400">Address</td>

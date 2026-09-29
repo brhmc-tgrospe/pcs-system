@@ -16,6 +16,8 @@ class ItemController extends Controller
             'unit_cost' => ['required', 'numeric', 'min:0'],
             'quantity' => ['required', 'numeric', 'min:1'],
             'category_id' => ['required', 'exists:categories,id'],
+            'status' => ['nullable', 'string', \Illuminate\Validation\Rule::in(Item::STATUSES)],
+            'awarded_bidder_id' => ['nullable', 'exists:bidders,id'],
             'image_url' => ['nullable', 'string', 'max:500'],
             'bidders' => ['nullable', 'array'],
             'bidders.*.id' => ['required', 'exists:bidders,id'],
@@ -27,7 +29,21 @@ class ItemController extends Controller
         } while (Item::where('item_code', $code)->exists());
         
         $validated['item_code'] = $code;
+        $status = $validated['status'] ?? Item::STATUS_ACTIVE;
+        $validated['status'] = $status;
         $validated['abc'] = $validated['unit_cost'] * $validated['quantity'];
+
+        if ($status === Item::STATUS_AWARDED) {
+            $bidderIds = collect($validated['bidders'] ?? [])->pluck('id')->map(fn($id) => (int)$id)->all();
+            if (empty($validated['awarded_bidder_id'])) {
+                return back()->withErrors(['awarded_bidder_id' => 'Please select the awarded bidder from vendor bidder quotations.']);
+            }
+            if (!in_array((int)$validated['awarded_bidder_id'], $bidderIds, true)) {
+                return back()->withErrors(['awarded_bidder_id' => 'The awarded bidder must be one of the vendor bidder quotations for this item.']);
+            }
+        } else {
+            $validated['awarded_bidder_id'] = null;
+        }
 
         $item = Item::create($validated);
 
@@ -51,13 +67,32 @@ class ItemController extends Controller
             'unit_cost' => ['required', 'numeric', 'min:0'],
             'quantity' => ['required', 'numeric', 'min:1'],
             'category_id' => ['required', 'exists:categories,id'],
+            'status' => ['nullable', 'string', \Illuminate\Validation\Rule::in(Item::STATUSES)],
+            'awarded_bidder_id' => ['nullable', 'exists:bidders,id'],
             'image_url' => ['nullable', 'string', 'max:500'],
             'bidders' => ['nullable', 'array'],
             'bidders.*.id' => ['required', 'exists:bidders,id'],
             'bidders.*.unit_cost' => ['required', 'numeric', 'min:0'],
         ]);
 
+        $status = $validated['status'] ?? $item->status ?? Item::STATUS_ACTIVE;
+        $validated['status'] = $status;
         $validated['abc'] = $validated['unit_cost'] * $validated['quantity'];
+
+        if ($status === Item::STATUS_AWARDED) {
+            $bidderIds = isset($validated['bidders'])
+                ? collect($validated['bidders'])->pluck('id')->map(fn($id) => (int)$id)->all()
+                : $item->bidders()->pluck('bidders.id')->all();
+
+            if (empty($validated['awarded_bidder_id'])) {
+                return back()->withErrors(['awarded_bidder_id' => 'Please select the awarded bidder from vendor bidder quotations.']);
+            }
+            if (!in_array((int)$validated['awarded_bidder_id'], $bidderIds, true)) {
+                return back()->withErrors(['awarded_bidder_id' => 'The awarded bidder must be one of the vendor bidder quotations for this item.']);
+            }
+        } else {
+            $validated['awarded_bidder_id'] = null;
+        }
 
         $item->update($validated);
 

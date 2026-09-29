@@ -106,4 +106,31 @@ class BidderImportTest extends TestCase
         $this->assertDatabaseHas('bidders', ['bidder_code' => 'BDR-201', 'name' => 'Good Email Inc']);
         $this->assertDatabaseMissing('bidders', ['bidder_code' => 'BDR-202']);
     }
+
+    public function test_can_import_bidders_with_brand_name_and_origin_columns(): void
+    {
+        $csvContent = "Bidder Code,Bidder Name,Brand Name,Origin\n" .
+            "BDR-301,Biologix Philippines,Biologix,China\n" .
+            "BDR-302,Karl Storz Distributor,Karl Storz,Germany\n";
+
+        $file = UploadedFile::fake()->createWithContent('bidders.csv', $csvContent);
+
+        $response = $this->actingAs($this->adminUser)->post('/catalog/bidders/import', [
+            'csv_file' => $file,
+        ]);
+
+        $response->assertSessionHas('success', 'Successfully imported 2 bidders.');
+        $this->assertDatabaseHas('bidders', [
+            'bidder_code' => 'BDR-301',
+            'name' => 'Biologix Philippines',
+            'brand_name' => 'Biologix',
+            'country_of_origin' => 'China',
+        ]);
+        $this->assertDatabaseHas('bidders', [
+            'bidder_code' => 'BDR-302',
+            'name' => 'Karl Storz Distributor',
+            'brand_name' => 'Karl Storz',
+            'country_of_origin' => 'Germany',
+        ]);
+    }
 }

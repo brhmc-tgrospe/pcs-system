@@ -108,8 +108,8 @@ export default function CommandPalette({
     const nav: PaletteActionItem[] = [
       {
         id: 'nav-catalog',
-        title: 'Master Catalog',
-        subtitle: 'Browse all procurement items, specs, and vendor pricing',
+        title: 'Master Projects',
+        subtitle: 'Browse all project items, specs, and vendor pricing',
         icon: Layers,
         iconColor: 'text-blue-500',
         category: 'Navigation',
@@ -160,8 +160,8 @@ export default function CommandPalette({
 
     nav.push({
       id: 'nav-print-report',
-      title: 'Print Catalog Report',
-      subtitle: 'Generate and print official price catalog documents',
+      title: 'Print Project Report',
+      subtitle: 'Generate and print official project pricing documents',
       icon: Printer,
       iconColor: 'text-violet-500',
       category: 'Navigation',

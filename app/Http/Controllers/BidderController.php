@@ -31,6 +31,9 @@ class BidderController extends Controller
                 'bidders.*.email' => ['nullable', 'email', 'max:255'],
                 'bidders.*.address' => ['nullable', 'string'],
                 'bidders.*.location' => ['nullable', 'string', 'max:255'],
+                'bidders.*.brand_name' => ['nullable', 'string', 'max:255'],
+                'bidders.*.country_of_origin' => ['nullable', 'string', 'max:255'],
+                'bidders.*.origin' => ['nullable', 'string', 'max:255'],
             ], [
                 'bidders.*.name.required' => 'Bidder name is required.',
                 'bidders.*.bidder_code.required' => 'Bidder code is required.',
@@ -40,6 +43,9 @@ class BidderController extends Controller
 
             DB::transaction(function () use ($validated) {
                 foreach ($validated['bidders'] as $bidderData) {
+                    if (!empty($bidderData['origin']) && empty($bidderData['country_of_origin'])) {
+                        $bidderData['country_of_origin'] = $bidderData['origin'];
+                    }
                     Bidder::create($bidderData);
                 }
             });
@@ -56,7 +62,14 @@ class BidderController extends Controller
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string'],
             'location' => ['nullable', 'string', 'max:255'],
+            'brand_name' => ['nullable', 'string', 'max:255'],
+            'country_of_origin' => ['nullable', 'string', 'max:255'],
+            'origin' => ['nullable', 'string', 'max:255'],
         ]);
+
+        if (!empty($validated['origin']) && empty($validated['country_of_origin'])) {
+            $validated['country_of_origin'] = $validated['origin'];
+        }
 
         Bidder::create($validated);
 
@@ -73,7 +86,14 @@ class BidderController extends Controller
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string'],
             'location' => ['nullable', 'string', 'max:255'],
+            'brand_name' => ['nullable', 'string', 'max:255'],
+            'country_of_origin' => ['nullable', 'string', 'max:255'],
+            'origin' => ['nullable', 'string', 'max:255'],
         ]);
+
+        if (!empty($validated['origin']) && empty($validated['country_of_origin'])) {
+            $validated['country_of_origin'] = $validated['origin'];
+        }
 
         $bidder->update($validated);
 

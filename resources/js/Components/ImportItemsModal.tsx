@@ -117,7 +117,7 @@ export default function ImportItemsModal({
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Bulk Import Items via CSV</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Add multiple catalog items and their bidder prices quickly using a spreadsheet.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Add multiple project items and their bidder prices quickly using a spreadsheet.</p>
             </div>
           </div>
           <button

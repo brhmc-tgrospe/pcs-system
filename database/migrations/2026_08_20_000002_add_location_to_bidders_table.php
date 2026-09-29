@@ -11,9 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (Schema::hasTable('bidders') && !Schema::hasColumn('bidders', 'location')) {
+        if (Schema::hasTable('bidders')) {
             Schema::table('bidders', function (Blueprint $table) {
-                $table->string('location')->nullable()->after('address');
+                if (!Schema::hasColumn('bidders', 'location')) {
+                    $table->string('location')->nullable()->after('address');
+                }
+                if (!Schema::hasColumn('bidders', 'brand_name')) {
+                    $table->string('brand_name')->nullable()->after('address');
+                }
+                if (!Schema::hasColumn('bidders', 'country_of_origin')) {
+                    $table->string('country_of_origin')->nullable()->after('brand_name');
+                }
             });
         }
     }
@@ -23,9 +31,17 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasTable('bidders') && Schema::hasColumn('bidders', 'location')) {
+        if (Schema::hasTable('bidders')) {
             Schema::table('bidders', function (Blueprint $table) {
-                $table->dropColumn('location');
+                if (Schema::hasColumn('bidders', 'country_of_origin')) {
+                    $table->dropColumn('country_of_origin');
+                }
+                if (Schema::hasColumn('bidders', 'brand_name')) {
+                    $table->dropColumn('brand_name');
+                }
+                if (Schema::hasColumn('bidders', 'location')) {
+                    $table->dropColumn('location');
+                }
             });
         }
     }

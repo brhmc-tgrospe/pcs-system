@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, X, Box, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, X, Box, Tag, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { Item, Category } from '../types';
 
 interface StatDetailsModalProps {
@@ -8,21 +8,39 @@ interface StatDetailsModalProps {
   title: string;
   data: any[];
   type: 'items' | 'categories';
+  onViewItem?: (item: Item) => void;
 }
 
-export default function StatDetailsModal({ isOpen, onClose, title, data, type }: StatDetailsModalProps) {
+export default function StatDetailsModal({ isOpen, onClose, title, data, type, onViewItem }: StatDetailsModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const totalContract = useMemo(() => {
+    if (title !== 'Awarded Items') return 0;
+    return (data as Item[]).reduce((sum, item) => sum + (Number(item.awarded_abc) || 0), 0);
+  }, [data, title]);
 
   const filteredData = useMemo(() => {
     return data.filter(item => {
       if (type === 'items') {
         const i = item as Item;
-        return (
+        const baseMatch = (
           i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           i.item_code.toLowerCase().includes(searchTerm.toLowerCase())
         );
+        if (title === 'Awarded Items') {
+          const bidder = i.awarded_bidder || i.bidders?.find(b => b.id === i.awarded_bidder_id);
+          const bidderMatch = bidder && (
+            bidder.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            bidder.bidder_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            bidder.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            bidder.country_of_origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            bidder.origin?.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+          return Boolean(baseMatch || bidderMatch);
+        }
+        return baseMatch;
       } else {
         const c = item as Category;
         return (
@@ -31,7 +49,7 @@ export default function StatDetailsModal({ isOpen, onClose, title, data, type }:
         );
       }
     });
-  }, [data, searchTerm, type]);
+  }, [data, searchTerm, type, title]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
   const paginatedData = useMemo(() => {
@@ -51,13 +69,18 @@ export default function StatDetailsModal({ isOpen, onClose, title, data, type }:
               {type === 'items' ? <Box className="w-5 h-5" /> : <Tag className="w-5 h-5" />}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                   {title}
                 </h2>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                   {filteredData.length}
                 </span>
+                {title === 'Awarded Items' && totalContract > 0 && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                    Total Contract: ₱{totalContract.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Detailed listing of {type === 'items' ? 'procurement items' : 'categories'}.
@@ -78,7 +101,7 @@ export default function StatDetailsModal({ isOpen, onClose, title, data, type }:
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder={`Search ${type === 'items' ? 'by item code or name' : 'by category name'}...`}
+              placeholder={`Search ${type === 'items' ? 'by item code, name, or bidder' : 'by category name'}...`}
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -94,7 +117,16 @@ export default function StatDetailsModal({ isOpen, onClose, title, data, type }:
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/90 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider sticky top-0 backdrop-blur-md border-b border-slate-100 dark:border-slate-700 z-10">
-                {type === 'items' ? (
+                {title === 'Awarded Items' ? (
+                  <>
+                    <th className="py-2.5 px-3.5 font-semibold w-28">Item Code</th>
+                    <th className="py-2.5 px-3.5 font-semibold">Item Title</th>
+                    <th className="py-2.5 px-3.5 font-semibold">Winning Bidder</th>
+                    <th className="py-2.5 px-3.5 font-semibold text-right w-32">Winning Cost</th>
+                    <th className="py-2.5 px-3.5 font-semibold text-right w-36">Winning ABC</th>
+                    {onViewItem && <th className="py-2.5 px-3.5 font-semibold text-right w-16">Action</th>}
+                  </>
+                ) : type === 'items' ? (
                   <>
                     <th className="py-2.5 px-3.5 font-semibold w-32">Item Code</th>
                     <th className="py-2.5 px-3.5 font-semibold">Name & Details</th>
@@ -113,14 +145,82 @@ export default function StatDetailsModal({ isOpen, onClose, title, data, type }:
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
               {paginatedData.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">
+                  <td colSpan={title === 'Awarded Items' ? (onViewItem ? 6 : 5) : 4} className="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">
                     No records found matching "{searchTerm}".
                   </td>
                 </tr>
               ) : (
                 paginatedData.map((item, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors">
-                    {type === 'items' ? (
+                    {title === 'Awarded Items' ? (
+                      <>
+                        <td className="py-2.5 px-3.5 text-xs font-mono font-semibold text-blue-600 dark:text-blue-400">
+                          {(item as Item).item_code}
+                        </td>
+                        <td className="py-2.5 px-3.5">
+                          <div className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            {(item as Item).name}
+                          </div>
+                          {(item as Item).description && (
+                            <div className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">
+                              {(item as Item).description}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3.5 text-xs font-medium text-slate-800 dark:text-slate-200">
+                          {(() => {
+                            const winningBidder = (item as Item).awarded_bidder || (item as Item).bidders?.find(b => b.id === (item as Item).awarded_bidder_id);
+                            if (!winningBidder) return <span className="text-slate-400 dark:text-slate-500 italic">No bidder selected</span>;
+                            return (
+                              <div className="space-y-0.5">
+                                <div className="font-semibold text-slate-900 dark:text-slate-100">{winningBidder.name}</div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {winningBidder.bidder_code && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300">
+                                      {winningBidder.bidder_code}
+                                    </span>
+                                  )}
+                                  {winningBidder.brand_name && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                                      {winningBidder.brand_name}
+                                    </span>
+                                  )}
+                                  {(winningBidder.country_of_origin || winningBidder.origin) && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
+                                      {winningBidder.country_of_origin || winningBidder.origin}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </td>
+                        <td className="py-2.5 px-3.5 text-xs font-semibold text-slate-900 dark:text-slate-100 text-right">
+                          {(item as Item).awarded_unit_cost !== null && (item as Item).awarded_unit_cost !== undefined
+                            ? '₱' + Number((item as Item).awarded_unit_cost).toLocaleString('en-PH', { minimumFractionDigits: 2 })
+                            : '-'}
+                        </td>
+                        <td className="py-2.5 px-3.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 text-right">
+                          {(item as Item).awarded_abc !== null && (item as Item).awarded_abc !== undefined
+                            ? '₱' + Number((item as Item).awarded_abc).toLocaleString('en-PH', { minimumFractionDigits: 2 })
+                            : '-'}
+                        </td>
+                        {onViewItem && (
+                          <td className="py-2.5 px-3.5 text-right">
+                            <button
+                              onClick={() => {
+                                onViewItem(item as Item);
+                                onClose();
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors cursor-pointer"
+                              title="View Item Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </td>
+                        )}
+                      </>
+                    ) : type === 'items' ? (
                       <>
                         <td className="py-2.5 px-3.5 text-xs font-mono font-semibold text-blue-600 dark:text-blue-400">
                           {(item as Item).item_code}

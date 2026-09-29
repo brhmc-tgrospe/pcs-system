@@ -75,7 +75,7 @@ export default function Settings({ auth, users, signatories = [] }: SettingsProp
                         required
                       >
                         <option value="dashboard">Dashboard</option>
-                        <option value="catalog">Master Catalog</option>
+                        <option value="catalog">Master Projects</option>
                       </select>
                     </div>
                   </div>
