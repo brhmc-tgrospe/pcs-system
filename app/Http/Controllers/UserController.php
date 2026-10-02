@@ -4,23 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class UserController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index()
+    public function index(): Response
     {
         $this->authorize('viewAny', User::class);
 
         $query = User::orderBy('role')->orderBy('first_name');
 
-        if (auth()->user()->role === 'administrator') {
+        /** @var User $authUser */
+        $authUser = auth()->user();
+
+        if ($authUser->isAdmin()) {
             $query->where('role', '!=', 'developer');
         }
 
@@ -52,7 +57,10 @@ class UserController extends Controller
             'role' => ['required', 'in:user,administrator,developer'],
         ]);
 
-        if (auth()->user()->role === 'administrator' && $validated['role'] !== 'user') {
+        /** @var User $authUser */
+        $authUser = auth()->user();
+
+        if ($authUser->isAdmin() && $validated['role'] !== 'user') {
             return back()->with('error', 'Administrators can only create users with the User role.');
         }
 
@@ -66,6 +74,18 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        /** @var User $authUser */
+        $authUser = auth()->user();
+
+        try {
+            $this->authorize('update', $user);
+        } catch (AuthorizationException $e) {
+            if ($authUser->isAdmin() && ! $user->isStaff()) {
+                return back()->with('error', 'Administrators cannot edit other administrators or developers.');
+            }
+            throw $e;
+        }
+
         $validated = $request->validate([
             'username' => ['required', 'string', 'max:50', 'unique:users,username,'.$user->id],
             'first_name' => ['required', 'string', 'max:100'],
@@ -74,16 +94,9 @@ class UserController extends Controller
             'role' => ['required', 'in:user,administrator,developer'],
         ]);
 
-        if (auth()->user()->role === 'administrator') {
-            if (in_array($user->role, ['administrator', 'developer'])) {
-                return back()->with('error', 'Administrators cannot edit other administrators or developers.');
-            }
-            if ($validated['role'] !== 'user') {
-                return back()->with('error', 'Administrators can only assign the User role.');
-            }
+        if ($authUser->isAdmin() && $validated['role'] !== 'user') {
+            return back()->with('error', 'Administrators can only assign the User role.');
         }
-
-        $this->authorize('update', $user);
 
         if ($request->filled('password')) {
             $request->validate(['password' => ['string', 'min:6']]);
@@ -104,15 +117,20 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
-        if ($user->id === auth()->id()) {
-            return back()->with('error', 'You cannot delete your own account.');
-        }
+        /** @var User $authUser */
+        $authUser = auth()->user();
 
-        if (auth()->user()->role === 'administrator' && in_array($user->role, ['administrator', 'developer'])) {
-            return back()->with('error', 'Administrators cannot delete other administrators or developers.');
+        try {
+            $this->authorize('delete', $user);
+        } catch (AuthorizationException $e) {
+            if ($user->id === $authUser->id) {
+                return back()->with('error', 'You cannot delete your own account.');
+            }
+            if ($authUser->isAdmin() && ! $user->isStaff()) {
+                return back()->with('error', 'Administrators cannot delete other administrators or developers.');
+            }
+            throw $e;
         }
-
-        $this->authorize('delete', $user);
 
         ActivityLog::log('user_deleted', "User '{$user->username}' was deleted.", 'User', $user->id);
         $user->delete();
