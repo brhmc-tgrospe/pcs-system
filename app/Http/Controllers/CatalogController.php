@@ -1,11 +1,12 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\Bidder;
 use App\Models\Category;
 use App\Models\Item;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -18,10 +19,12 @@ class CatalogController extends Controller
         $items = Item::withTrashed()->with([
             'category',
             'awardedBidder',
-            'bidders' => function($q) { $q->withTrashed(); }
+            'bidders' => function ($q) {
+                $q->withTrashed();
+            },
         ])->orderBy('item_code')->get();
         $categories = Category::withTrashed()->withCount('items')->orderBy('name')->get();
-        $bidders = \App\Models\Bidder::orderBy('name')->get();
+        $bidders = Bidder::orderBy('name')->get();
         $recentLogsQuery = ActivityLog::with('user')->visibleTo($user);
 
         $recentLogs = $recentLogsQuery
@@ -31,44 +34,44 @@ class CatalogController extends Controller
             ->map(function ($log) use ($user) {
                 $logUser = null;
                 if ($log->user) {
-                    if ($user->role === 'user' && $log->user_id !== $user->id) {
+                    if ($user->isStaff() && $log->user_id !== $user->id) {
                         $logUser = [
-                            'username'  => 'System',
+                            'username' => 'System',
                             'full_name' => 'System',
                         ];
                     } else {
                         $logUser = [
-                            'username'  => $log->user->username,
+                            'username' => $log->user->username,
                             'full_name' => $log->user->full_name,
                         ];
                     }
                 }
-                
+
                 return [
-                    'id'          => $log->id,
-                    'action'      => $log->action,
+                    'id' => $log->id,
+                    'action' => $log->action,
                     'description' => $log->description,
-                    'ip_address'  => $log->ip_address,
-                    'created_at'  => $log->created_at->toISOString(),
-                    'user'        => $logUser,
+                    'ip_address' => $log->ip_address,
+                    'created_at' => $log->created_at->toISOString(),
+                    'user' => $logUser,
                 ];
             });
 
         $props = compact('items', 'categories', 'recentLogs', 'bidders');
 
         // Only expose full user list to developers
-        if ($user->role === 'developer') {
+        if ($user->isDeveloper()) {
             $props['users'] = User::select('id', 'username', 'first_name', 'last_name', 'email', 'role')
                 ->where('id', '!=', $user->id)
                 ->orderBy('role')
                 ->orderBy('first_name')
                 ->get()
                 ->map(fn ($u) => [
-                    'id'        => $u->id,
-                    'username'  => $u->username,
+                    'id' => $u->id,
+                    'username' => $u->username,
                     'full_name' => $u->full_name,
-                    'email'     => $u->email,
-                    'role'      => $u->role,
+                    'email' => $u->email,
+                    'role' => $u->role,
                 ]);
         }
 
