@@ -1,13 +1,18 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\BidderController;
+use App\Http\Controllers\BidderImportController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ImpersonationController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ItemImportController;
 use App\Http\Controllers\PrintReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\SignatoryController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,7 +28,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/catalog/search', [SearchController::class, 'index'])->name('catalog.search');
     Route::get('/projects/search', [SearchController::class, 'index'])->name('projects.search');
 
-    // Category CRUD (admin + developer)
+    // Category and Item Management (admin + developer, enforced by CategoryPolicy & ItemPolicy)
     Route::middleware(['role:administrator,developer'])->group(function () {
         Route::post('/catalog/categories', [CategoryController::class, 'store'])->name('categories.store');
         Route::put('/catalog/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
@@ -35,7 +40,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/catalog/categories/bulk/force', [CategoryController::class, 'bulkForceDelete'])->name('categories.bulkForceDelete');
 
         // Item CRUD
-        Route::post('/catalog/items/import', [\App\Http\Controllers\ItemImportController::class, 'import'])->name('items.import');
+        Route::post('/catalog/items/import', [ItemImportController::class, 'import'])->name('items.import');
         Route::post('/catalog/items', [ItemController::class, 'store'])->name('items.store');
         Route::put('/catalog/items/{item}', [ItemController::class, 'update'])->name('items.update');
         Route::delete('/catalog/items/{item}', [ItemController::class, 'destroy'])->name('items.destroy');
@@ -61,18 +66,18 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
         // Bidders Management
-        Route::post('/catalog/bidders/import', [\App\Http\Controllers\BidderImportController::class, 'import'])->name('bidders.import');
-        Route::get('/catalog/bidders', [\App\Http\Controllers\BidderController::class, 'index'])->name('bidders.index');
-        Route::post('/catalog/bidders', [\App\Http\Controllers\BidderController::class, 'store'])->name('bidders.store');
-        Route::put('/catalog/bidders/{bidder}', [\App\Http\Controllers\BidderController::class, 'update'])->name('bidders.update');
-        Route::delete('/catalog/bidders/{bidder}', [\App\Http\Controllers\BidderController::class, 'destroy'])->name('bidders.destroy');
-        Route::post('/catalog/bidders/{id}/restore', [\App\Http\Controllers\BidderController::class, 'restore'])->name('bidders.restore');
+        Route::post('/catalog/bidders/import', [BidderImportController::class, 'import'])->name('bidders.import');
+        Route::get('/catalog/bidders', [BidderController::class, 'index'])->name('bidders.index');
+        Route::post('/catalog/bidders', [BidderController::class, 'store'])->name('bidders.store');
+        Route::put('/catalog/bidders/{bidder}', [BidderController::class, 'update'])->name('bidders.update');
+        Route::delete('/catalog/bidders/{bidder}', [BidderController::class, 'destroy'])->name('bidders.destroy');
+        Route::post('/catalog/bidders/{id}/restore', [BidderController::class, 'restore'])->name('bidders.restore');
 
         // Signatories Management (Admin & Developer only)
-        Route::post('/settings/signatories', [\App\Http\Controllers\SignatoryController::class, 'store'])->name('signatories.store');
-        Route::put('/settings/signatories/{signatory}', [\App\Http\Controllers\SignatoryController::class, 'update'])->name('signatories.update');
-        Route::delete('/settings/signatories/{signatory}', [\App\Http\Controllers\SignatoryController::class, 'destroy'])->name('signatories.destroy');
-        Route::post('/settings/signatories/reorder', [\App\Http\Controllers\SignatoryController::class, 'reorder'])->name('signatories.reorder');
+        Route::post('/settings/signatories', [SignatoryController::class, 'store'])->name('signatories.store');
+        Route::put('/settings/signatories/{signatory}', [SignatoryController::class, 'update'])->name('signatories.update');
+        Route::delete('/settings/signatories/{signatory}', [SignatoryController::class, 'destroy'])->name('signatories.destroy');
+        Route::post('/settings/signatories/reorder', [SignatoryController::class, 'reorder'])->name('signatories.reorder');
     });
 
     Route::middleware(['role:developer'])->group(function () {
@@ -88,8 +93,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     // Settings routes
-    Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
-    Route::post('/settings', [App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 });
 
 require __DIR__.'/auth.php';

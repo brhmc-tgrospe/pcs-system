@@ -1,15 +1,21 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
+    use AuthorizesRequests;
+
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', Category::class);
+
         if ($request->has('categories') && is_array($request->input('categories'))) {
             $validated = $request->validate([
                 'categories' => ['required', 'array', 'min:1'],
@@ -34,14 +40,15 @@ class CategoryController extends Controller
             });
 
             $count = count($validated['categories']);
+
             return back()->with('success', $count > 1 ? "{$count} categories created successfully." : 'Category created successfully.');
         }
 
         $validated = $request->validate([
-            'name'        => ['required', 'string', 'max:255', 'unique:categories,name'],
-            'cat_code'    => ['required', 'string', 'max:255', 'unique:categories,cat_code', 'regex:/^[a-z0-9-]+$/'],
+            'name' => ['required', 'string', 'max:255', 'unique:categories,name'],
+            'cat_code' => ['required', 'string', 'max:255', 'unique:categories,cat_code', 'regex:/^[a-z0-9-]+$/'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'parent_id'   => ['nullable', 'exists:categories,id'],
+            'parent_id' => ['nullable', 'exists:categories,id'],
         ]);
 
         $category = Category::create($validated);
@@ -51,11 +58,13 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category): RedirectResponse
     {
+        $this->authorize('update', $category);
+
         $validated = $request->validate([
-            'name'        => ['required', 'string', 'max:255', 'unique:categories,name,' . $category->id],
-            'cat_code'    => ['required', 'string', 'max:255', 'unique:categories,cat_code,' . $category->id, 'regex:/^[a-z0-9-]+$/'],
+            'name' => ['required', 'string', 'max:255', 'unique:categories,name,'.$category->id],
+            'cat_code' => ['required', 'string', 'max:255', 'unique:categories,cat_code,'.$category->id, 'regex:/^[a-z0-9-]+$/'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'parent_id'   => ['nullable', 'exists:categories,id', function ($attribute, $value, $fail) use ($category) {
+            'parent_id' => ['nullable', 'exists:categories,id', function ($attribute, $value, $fail) use ($category) {
                 if ($value == $category->id) {
                     $fail('A category cannot be its own parent.');
                 }
@@ -69,6 +78,8 @@ class CategoryController extends Controller
 
     public function destroy(Category $category): RedirectResponse
     {
+        $this->authorize('delete', $category);
+
         if ($category->items()->withTrashed()->exists()) {
             return back()->with('error', "Cannot delete '{$category->name}' because it has items. Remove or reassign the items first.");
         }
@@ -79,34 +90,37 @@ class CategoryController extends Controller
         return back()->with('success', "Category '{$name}' deleted successfully.");
     }
 
-    public function restore($id): RedirectResponse
+    public function restore(int $id): RedirectResponse
     {
         $category = Category::withTrashed()->findOrFail($id);
+        $this->authorize('restore', $category);
+
         $category->restore();
+
         return back()->with('success', "Category '{$category->name}' restored successfully.");
     }
 
-    public function forceDelete($id): RedirectResponse
+    public function forceDelete(int $id): RedirectResponse
     {
-        if (auth()->user()->role !== 'developer') {
-            return back()->with('error', 'Only developers can permanently delete data. Please contact the developer team to have this category permanently removed.');
-        }
-
         $category = Category::withTrashed()->findOrFail($id);
-        
+        $this->authorize('forceDelete', $category);
+
         if ($category->items()->withTrashed()->exists()) {
             return back()->with('error', "Cannot permanently delete '{$category->name}' because it has items.");
         }
 
         $name = $category->name;
         $category->forceDelete();
+
         return back()->with('success', "Category '{$name}' permanently deleted.");
     }
 
     public function bulkDelete(Request $request): RedirectResponse
     {
+        $this->authorize('delete', Category::class);
+
         $validated = $request->validate([
-            'ids'   => ['required', 'array'],
+            'ids' => ['required', 'array'],
             'ids.*' => ['integer', 'exists:categories,id'],
         ]);
 
@@ -125,6 +139,7 @@ class CategoryController extends Controller
 
         if (count($failedNames) > 0) {
             $failedStr = implode(', ', $failedNames);
+
             return back()->with('error', "Deleted {$deletedCount} category/categories. Failed to delete: {$failedStr} (they have items connected).");
         }
 
@@ -133,23 +148,24 @@ class CategoryController extends Controller
 
     public function bulkRestore(Request $request): RedirectResponse
     {
+        $this->authorize('restore', Category::class);
+
         $validated = $request->validate([
-            'ids'   => ['required', 'array'],
+            'ids' => ['required', 'array'],
             'ids.*' => ['integer'],
         ]);
 
         $count = Category::withTrashed()->whereIn('id', $validated['ids'])->restore();
+
         return back()->with('success', "{$count} category/categories restored successfully.");
     }
 
     public function bulkForceDelete(Request $request): RedirectResponse
     {
-        if (auth()->user()->role !== 'developer') {
-            return back()->with('error', 'Only developers can permanently delete data. Please contact the developer team to have these categories permanently removed.');
-        }
+        $this->authorize('forceDeleteAny', Category::class);
 
         $validated = $request->validate([
-            'ids'   => ['required', 'array'],
+            'ids' => ['required', 'array'],
             'ids.*' => ['integer'],
         ]);
 
@@ -168,6 +184,7 @@ class CategoryController extends Controller
 
         if (count($failedNames) > 0) {
             $failedStr = implode(', ', $failedNames);
+
             return back()->with('error', "Permanently deleted {$deletedCount} category/categories. Failed to delete: {$failedStr} (they have items connected).");
         }
 

@@ -27,12 +27,22 @@ class CategoryPolicy
         return $user->isAdmin() || $user->isDeveloper();
     }
 
-    public function delete(User $user, Category $category): bool
+    public function delete(User $user, ?Category $category = null): bool
     {
         return $user->isAdmin() || $user->isDeveloper();
     }
 
-    public function restore(User $user, Category $category): bool
+    public function deleteAny(User $user): bool
+    {
+        return $user->isAdmin() || $user->isDeveloper();
+    }
+
+    public function restore(User $user, ?Category $category = null): bool
+    {
+        return $user->isAdmin() || $user->isDeveloper();
+    }
+
+    public function restoreAny(User $user): bool
     {
         return $user->isAdmin() || $user->isDeveloper();
     }

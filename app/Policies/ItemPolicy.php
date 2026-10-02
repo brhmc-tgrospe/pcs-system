@@ -27,12 +27,22 @@ class ItemPolicy
         return $user->isAdmin() || $user->isDeveloper();
     }
 
-    public function delete(User $user, Item $item): bool
+    public function delete(User $user, ?Item $item = null): bool
     {
         return $user->isAdmin() || $user->isDeveloper();
     }
 
-    public function restore(User $user, Item $item): bool
+    public function deleteAny(User $user): bool
+    {
+        return $user->isAdmin() || $user->isDeveloper();
+    }
+
+    public function restore(User $user, ?Item $item = null): bool
+    {
+        return $user->isAdmin() || $user->isDeveloper();
+    }
+
+    public function restoreAny(User $user): bool
     {
         return $user->isAdmin() || $user->isDeveloper();
     }
