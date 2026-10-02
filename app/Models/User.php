@@ -33,4 +33,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(ActivityLog::class);
     }
+
+    public function isDeveloper(): bool
+    {
+        return $this->role === 'developer';
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'administrator';
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->role === 'user';
+    }
 }
