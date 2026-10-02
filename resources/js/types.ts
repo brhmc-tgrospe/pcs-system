@@ -5,6 +5,17 @@
 
 export type UserRole = 'user' | 'administrator' | 'developer';
 
+export interface UserPermissions {
+  manage_items: boolean;
+  force_delete: boolean;
+  manage_categories: boolean;
+  manage_bidders: boolean;
+  manage_users: boolean;
+  view_logs: boolean;
+  manage_settings: boolean;
+  impersonate: boolean;
+}
+
 export interface AuthUser {
   id: number;
   username: string;
@@ -14,6 +25,7 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   is_impersonating: boolean;
+  can: UserPermissions;
 }
 
 export interface Category {
