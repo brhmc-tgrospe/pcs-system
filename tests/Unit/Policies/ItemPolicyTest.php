@@ -45,8 +45,11 @@ class ItemPolicyTest extends TestCase
         $this->assertFalse($this->policy->create($this->staff));
         $this->assertFalse($this->policy->update($this->staff, $this->item));
         $this->assertFalse($this->policy->delete($this->staff, $this->item));
+        $this->assertFalse($this->policy->deleteAny($this->staff));
         $this->assertFalse($this->policy->restore($this->staff, $this->item));
+        $this->assertFalse($this->policy->restoreAny($this->staff));
         $this->assertFalse($this->policy->forceDelete($this->staff, $this->item));
+        $this->assertFalse($this->policy->forceDeleteAny($this->staff));
     }
 
     public function test_admin_can_manage_items_but_cannot_force_delete(): void
@@ -54,7 +57,9 @@ class ItemPolicyTest extends TestCase
         $this->assertTrue($this->policy->create($this->admin));
         $this->assertTrue($this->policy->update($this->admin, $this->item));
         $this->assertTrue($this->policy->delete($this->admin, $this->item));
+        $this->assertTrue($this->policy->deleteAny($this->admin));
         $this->assertTrue($this->policy->restore($this->admin, $this->item));
+        $this->assertTrue($this->policy->restoreAny($this->admin));
         $this->assertFalse($this->policy->forceDelete($this->admin, $this->item));
         $this->assertFalse($this->policy->forceDeleteAny($this->admin));
     }
@@ -64,7 +69,9 @@ class ItemPolicyTest extends TestCase
         $this->assertTrue($this->policy->create($this->developer));
         $this->assertTrue($this->policy->update($this->developer, $this->item));
         $this->assertTrue($this->policy->delete($this->developer, $this->item));
+        $this->assertTrue($this->policy->deleteAny($this->developer));
         $this->assertTrue($this->policy->restore($this->developer, $this->item));
+        $this->assertTrue($this->policy->restoreAny($this->developer));
         $this->assertTrue($this->policy->forceDelete($this->developer, $this->item));
         $this->assertTrue($this->policy->forceDeleteAny($this->developer));
     }

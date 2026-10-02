@@ -161,4 +161,35 @@ class ItemAuthorizationTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseMissing('categories', ['id' => $cat->id]);
     }
+
+    public function test_admin_cannot_bulk_force_delete_categories(): void
+    {
+        $admin = User::factory()->create(['role' => 'administrator']);
+        $cat = Category::create([
+            'name' => 'Surgery Supplies',
+            'cat_code' => 'surg-sup',
+        ]);
+        $cat->delete();
+
+        $response = $this->actingAs($admin)->post('/catalog/categories/bulk/force', [
+            'ids' => [$cat->id],
+        ]);
+        $response->assertStatus(403);
+    }
+
+    public function test_developer_can_bulk_force_delete_categories(): void
+    {
+        $dev = User::factory()->create(['role' => 'developer']);
+        $cat = Category::create([
+            'name' => 'Pediatric Supplies',
+            'cat_code' => 'pedia-sup',
+        ]);
+        $cat->delete();
+
+        $response = $this->actingAs($dev)->post('/catalog/categories/bulk/force', [
+            'ids' => [$cat->id],
+        ]);
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('categories', ['id' => $cat->id]);
+    }
 }

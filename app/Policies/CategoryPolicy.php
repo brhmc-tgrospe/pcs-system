@@ -27,7 +27,7 @@ class CategoryPolicy
         return $user->isAdmin() || $user->isDeveloper();
     }
 
-    public function delete(User $user, ?Category $category = null): bool
+    public function delete(User $user, Category $category): bool
     {
         return $user->isAdmin() || $user->isDeveloper();
     }
@@ -37,7 +37,7 @@ class CategoryPolicy
         return $user->isAdmin() || $user->isDeveloper();
     }
 
-    public function restore(User $user, ?Category $category = null): bool
+    public function restore(User $user, Category $category): bool
     {
         return $user->isAdmin() || $user->isDeveloper();
     }

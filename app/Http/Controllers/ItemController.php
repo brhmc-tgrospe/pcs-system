@@ -153,7 +153,7 @@ class ItemController extends Controller
 
     public function bulkDelete(Request $request): RedirectResponse
     {
-        $this->authorize('delete', Item::class);
+        $this->authorize('deleteAny', Item::class);
 
         $validated = $request->validate([
             'ids' => ['required', 'array'],
@@ -167,7 +167,7 @@ class ItemController extends Controller
 
     public function bulkRestore(Request $request): RedirectResponse
     {
-        $this->authorize('restore', Item::class);
+        $this->authorize('restoreAny', Item::class);
 
         $validated = $request->validate([
             'ids' => ['required', 'array'],

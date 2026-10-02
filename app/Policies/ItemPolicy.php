@@ -27,7 +27,7 @@ class ItemPolicy
         return $user->isAdmin() || $user->isDeveloper();
     }
 
-    public function delete(User $user, ?Item $item = null): bool
+    public function delete(User $user, Item $item): bool
     {
         return $user->isAdmin() || $user->isDeveloper();
     }
@@ -37,7 +37,7 @@ class ItemPolicy
         return $user->isAdmin() || $user->isDeveloper();
     }
 
-    public function restore(User $user, ?Item $item = null): bool
+    public function restore(User $user, Item $item): bool
     {
         return $user->isAdmin() || $user->isDeveloper();
     }
