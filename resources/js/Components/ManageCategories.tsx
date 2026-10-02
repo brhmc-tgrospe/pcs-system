@@ -24,6 +24,7 @@ type CategoryFormData = {
 };
 
 export default function ManageCategories({ categories, user }: ManageCategoriesProps) {
+  const canForceDelete = Boolean(user.can?.force_delete);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   const {
@@ -183,6 +184,7 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
   };
 
   const handleBulkForceDelete = () => {
+    if (!canForceDelete) return;
     setModalConfig({
       isOpen: true,
       title: 'Bulk Permanently Delete Categories',
@@ -231,6 +233,7 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
   };
 
   const promptForceDelete = (cat: Category) => {
+    if (!canForceDelete) return;
     setModalConfig({
       isOpen: true,
       title: 'Permanently Delete Category',
@@ -350,12 +353,14 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
                     >
                       Restore Selected
                     </button>
-                    <button
-                      onClick={handleBulkForceDelete}
-                      className="px-2.5 py-1 bg-rose-600 text-white text-xs font-semibold rounded-lg hover:bg-rose-700 transition-colors shadow-sm cursor-pointer"
-                    >
-                      Permanently Delete
-                    </button>
+                    {canForceDelete && (
+                      <button
+                        onClick={handleBulkForceDelete}
+                        className="px-2.5 py-1 bg-rose-600 text-white text-xs font-semibold rounded-lg hover:bg-rose-700 transition-colors shadow-sm cursor-pointer"
+                      >
+                        Permanently Delete
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -439,13 +444,15 @@ export default function ManageCategories({ categories, user }: ManageCategoriesP
                             >
                               <ArchiveRestore className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => promptForceDelete(cat)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-                              title="Permanently Delete"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {canForceDelete && (
+                              <button
+                                onClick={() => promptForceDelete(cat)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                                title="Permanently Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </>
                         ) : (
                           <>

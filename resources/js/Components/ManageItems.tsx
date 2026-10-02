@@ -35,6 +35,7 @@ type ItemFormData = {
 
 export default function ManageItems({ items, categories, bidders, onViewItem, user }: ManageItemsProps) {
   const { flash } = usePage<any>().props;
+  const canForceDelete = Boolean(user.can?.force_delete);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
   const [itemToRestore, setItemToRestore] = useState<Item | null>(null);
@@ -216,6 +217,7 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
   };
 
   const handleBulkForceDelete = () => {
+    if (!canForceDelete) return;
     setModalConfig({
       isOpen: true,
       title: 'Bulk Permanently Delete Items',
@@ -264,6 +266,7 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
   };
 
   const promptForceDelete = (item: Item) => {
+    if (!canForceDelete) return;
     setModalConfig({
       isOpen: true,
       title: 'Permanently Delete Item',
@@ -417,12 +420,14 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
                     >
                       Restore Selected
                     </button>
-                    <button
-                      onClick={handleBulkForceDelete}
-                      className="px-2.5 py-1 bg-rose-600 text-white text-xs font-semibold rounded-lg hover:bg-rose-700 transition-colors shadow-sm cursor-pointer"
-                    >
-                      Permanently Delete
-                    </button>
+                    {canForceDelete && (
+                      <button
+                        onClick={handleBulkForceDelete}
+                        className="px-2.5 py-1 bg-rose-600 text-white text-xs font-semibold rounded-lg hover:bg-rose-700 transition-colors shadow-sm cursor-pointer"
+                      >
+                        Permanently Delete
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -569,13 +574,15 @@ export default function ManageItems({ items, categories, bidders, onViewItem, us
                               >
                                 <ArchiveRestore className="w-3.5 h-3.5" />
                               </button>
-                              <button
-                                onClick={() => promptForceDelete(item)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-                                title="Permanently Delete"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              {canForceDelete && (
+                                <button
+                                  onClick={() => promptForceDelete(item)}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                                  title="Permanently Delete"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </>
                           ) : (
                             <>

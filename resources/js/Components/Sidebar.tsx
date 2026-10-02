@@ -27,25 +27,24 @@ function SidebarButton({ item, isActive, onNavigate }: { item: any, isActive: bo
 }
 
 export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView, onNavigate }: SidebarProps) {
-  const isAdmin = user.role === 'administrator' || user.role === 'developer';
-  const isDev = user.role === 'developer';
+  const canManageItems = Boolean(user.can?.manage_items);
+  const canManageCategories = Boolean(user.can?.manage_categories);
+  const canManageBidders = Boolean(user.can?.manage_bidders);
+  const canManageUsers = Boolean(user.can?.manage_users);
+  const canViewLogs = Boolean(user.can?.view_logs);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'catalog', label: 'Master Projects', icon: BookOpen },
-    ...(isAdmin ? [
-      { id: 'manage_items', label: 'Manage Items', icon: Boxes },
-      { id: 'manage_categories', label: 'Categories', icon: Tags },
-      { id: 'bidders', label: 'Bidders', icon: Building, href: '/catalog/bidders' },
-    ] : []),
+    ...(canManageItems ? [{ id: 'manage_items', label: 'Manage Items', icon: Boxes }] : []),
+    ...(canManageCategories ? [{ id: 'manage_categories', label: 'Categories', icon: Tags }] : []),
+    ...(canManageBidders ? [{ id: 'bidders', label: 'Bidders', icon: Building, href: '/catalog/bidders' }] : []),
   ];
 
   const reportItems = [
     { id: 'print_report', label: 'Print Project Report', icon: FileBarChart },
-    ...(isAdmin ? [
-      { id: 'activity_logs', label: 'Activity Logs', icon: Settings, href: '/activity-logs' },
-      { id: 'users', label: 'Manage Users', icon: Users, href: '/users' },
-    ] : []),
+    ...(canViewLogs ? [{ id: 'activity_logs', label: 'Activity Logs', icon: Settings, href: '/activity-logs' }] : []),
+    ...(canManageUsers ? [{ id: 'users', label: 'Manage Users', icon: Users, href: '/users' }] : []),
   ];
 
   return (

@@ -10,7 +10,7 @@ interface SignatoriesSettingsProps {
 }
 
 export default function SignatoriesSettings({ signatories = [], user }: SignatoriesSettingsProps) {
-  const canManage = user.role === 'administrator' || user.role === 'developer';
+  const canManage = Boolean(user.can?.manage_settings);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSignatory, setEditingSignatory] = useState<Signatory | null>(null);

@@ -59,8 +59,13 @@ export default function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const isAdminOrDev = user.role === 'administrator' || user.role === 'developer';
-  const isDev = user.role === 'developer';
+  const canManageItems = Boolean(user.can?.manage_items);
+  const canManageCategories = Boolean(user.can?.manage_categories);
+  const canManageBidders = Boolean(user.can?.manage_bidders);
+  const canManageUsers = Boolean(user.can?.manage_users);
+  const canViewLogs = Boolean(user.can?.view_logs);
+  const canManageSettings = Boolean(user.can?.manage_settings);
+  const canImpersonate = Boolean(user.can?.impersonate);
 
   // Focus input when modal opens
   useEffect(() => {
@@ -126,36 +131,40 @@ export default function CommandPalette({
       },
     ];
 
-    if (isAdminOrDev) {
-      nav.push(
-        {
-          id: 'nav-manage-items',
-          title: 'Manage Items',
-          subtitle: 'Create, edit, import, and organize inventory items',
-          icon: Package,
-          iconColor: 'text-emerald-500',
-          category: 'Navigation',
-          onSelect: () => router.visit('/catalog?view=manage_items'),
-        },
-        {
-          id: 'nav-manage-categories',
-          title: 'Manage Categories',
-          subtitle: 'Add, update, or remove item classifications',
-          icon: Tags,
-          iconColor: 'text-amber-500',
-          category: 'Navigation',
-          onSelect: () => router.visit('/catalog?view=manage_categories'),
-        },
-        {
-          id: 'nav-bidders',
-          title: 'Bidders Directory',
-          subtitle: 'Registered vendors, bidders, and supplier profiles',
-          icon: Building2,
-          iconColor: 'text-cyan-500',
-          category: 'Navigation',
-          onSelect: () => router.visit('/catalog/bidders'),
-        }
-      );
+    if (canManageItems) {
+      nav.push({
+        id: 'nav-manage-items',
+        title: 'Manage Items',
+        subtitle: 'Create, edit, import, and organize inventory items',
+        icon: Package,
+        iconColor: 'text-emerald-500',
+        category: 'Navigation',
+        onSelect: () => router.visit('/catalog?view=manage_items'),
+      });
+    }
+
+    if (canManageCategories) {
+      nav.push({
+        id: 'nav-manage-categories',
+        title: 'Manage Categories',
+        subtitle: 'Add, update, or remove item classifications',
+        icon: Tags,
+        iconColor: 'text-amber-500',
+        category: 'Navigation',
+        onSelect: () => router.visit('/catalog?view=manage_categories'),
+      });
+    }
+
+    if (canManageBidders) {
+      nav.push({
+        id: 'nav-bidders',
+        title: 'Bidders Directory',
+        subtitle: 'Registered vendors, bidders, and supplier profiles',
+        icon: Building2,
+        iconColor: 'text-cyan-500',
+        category: 'Navigation',
+        onSelect: () => router.visit('/catalog/bidders'),
+      });
     }
 
     nav.push({
@@ -168,31 +177,32 @@ export default function CommandPalette({
       onSelect: () => router.visit('/catalog?view=print_report'),
     });
 
-    if (isAdminOrDev) {
-      nav.push(
-        {
-          id: 'nav-activity-logs',
-          title: 'Activity Logs',
-          subtitle: 'Audit trail and system event history',
-          icon: Activity,
-          iconColor: 'text-rose-500',
-          category: 'Navigation',
-          onSelect: () => router.visit('/activity-logs'),
-        },
-        {
-          id: 'nav-users',
-          title: 'User Management',
-          subtitle: 'Manage user accounts, roles, and access credentials',
-          icon: Users,
-          iconColor: 'text-fuchsia-500',
-          category: 'Navigation',
-          onSelect: () => router.visit('/users'),
-        }
-      );
+    if (canViewLogs) {
+      nav.push({
+        id: 'nav-activity-logs',
+        title: 'Activity Logs',
+        subtitle: 'Audit trail and system event history',
+        icon: Activity,
+        iconColor: 'text-rose-500',
+        category: 'Navigation',
+        onSelect: () => router.visit('/activity-logs'),
+      });
     }
 
-    nav.push(
-      {
+    if (canManageUsers) {
+      nav.push({
+        id: 'nav-users',
+        title: 'User Management',
+        subtitle: 'Manage user accounts, roles, and access credentials',
+        icon: Users,
+        iconColor: 'text-fuchsia-500',
+        category: 'Navigation',
+        onSelect: () => router.visit('/users'),
+      });
+    }
+
+    if (canManageSettings) {
+      nav.push({
         id: 'nav-settings',
         title: 'System Settings',
         subtitle: 'Configure application preferences and signatories',
@@ -200,20 +210,21 @@ export default function CommandPalette({
         iconColor: 'text-slate-500',
         category: 'Navigation',
         onSelect: () => router.visit('/settings'),
-      },
-      {
-        id: 'nav-profile',
-        title: 'My Profile',
-        subtitle: 'Update your personal details and change password',
-        icon: User,
-        iconColor: 'text-sky-500',
-        category: 'Navigation',
-        onSelect: () => router.visit('/profile'),
-      }
-    );
+      });
+    }
+
+    nav.push({
+      id: 'nav-profile',
+      title: 'My Profile',
+      subtitle: 'Update your personal details and change password',
+      icon: User,
+      iconColor: 'text-sky-500',
+      category: 'Navigation',
+      onSelect: () => router.visit('/profile'),
+    });
 
     return nav;
-  }, [isAdminOrDev]);
+  }, [canManageItems, canManageCategories, canManageBidders, canViewLogs, canManageUsers, canManageSettings]);
 
   // Build static system actions
   const staticActions = useMemo<PaletteActionItem[]>(() => {
@@ -229,7 +240,7 @@ export default function CommandPalette({
       },
     ];
 
-    if (isDev && !user.is_impersonating && onOpenImpersonate) {
+    if (canImpersonate && !user.is_impersonating && onOpenImpersonate) {
       actions.push({
         id: 'action-impersonate',
         title: 'Impersonate User',
@@ -252,7 +263,7 @@ export default function CommandPalette({
     });
 
     return actions;
-  }, [isDark, isDev, user.is_impersonating, onOpenImpersonate, toggleDarkMode]);
+  }, [isDark, canImpersonate, user.is_impersonating, onOpenImpersonate, toggleDarkMode]);
 
   // Filter static items by search query
   const filteredNavigation = useMemo(() => {

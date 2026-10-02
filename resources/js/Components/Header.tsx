@@ -84,7 +84,7 @@ export default function Header({ onOpenMobile, user, users }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
-          {user.role === 'developer' && !user.is_impersonating && users && (
+          {Boolean(user.can?.impersonate) && !user.is_impersonating && users && (
             <button
               onClick={() => setShowImpersonateModal(true)}
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-fuchsia-700 dark:text-fuchsia-300 bg-fuchsia-50 dark:bg-fuchsia-900/30 hover:bg-fuchsia-100 dark:hover:bg-fuchsia-900/50 border border-fuchsia-200 dark:border-fuchsia-700 rounded-lg transition-colors cursor-pointer"
