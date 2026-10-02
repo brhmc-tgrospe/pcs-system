@@ -84,7 +84,7 @@ export default function Dashboard({ items, categories, recentLogs, onNavigate, u
         </div>
 
         {/* Developer Archived Items quick-access badge */}
-        {user.role === 'developer' && archivedItems.length > 0 && (
+        {Boolean(user.can?.force_delete) && archivedItems.length > 0 && (
           <button
             onClick={() => setActiveStat({ title: 'Archived Items', data: archivedItems, type: 'items' })}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200/70 dark:border-rose-800/70 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer self-start sm:self-auto"

@@ -54,7 +54,7 @@ export default function ManageUsers() {
     setCurrentPage(1);
   }, [searchTerm, roleFilter, perPage]);
 
-  const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<UserFormData>({
+  const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm<UserFormData>({
     username: '',
     first_name: '',
     last_name: '',
@@ -111,9 +111,10 @@ export default function ManageUsers() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isDeveloper) {
-      data.role = 'user';
-    }
+    transform((formData) => ({
+      ...formData,
+      role: !isDeveloper ? 'user' : formData.role,
+    }));
     if (editingUser) {
       put(`/users/${editingUser.id}`, {
         preserveScroll: true,
@@ -348,6 +349,7 @@ export default function ManageUsers() {
                                   onClick={() => router.post(`/impersonate/${u.id}`)}
                                   className="p-1.5 text-slate-400 hover:text-fuchsia-600 dark:hover:text-fuchsia-400 hover:bg-fuchsia-50 dark:hover:bg-fuchsia-950/40 rounded-lg transition-colors cursor-pointer"
                                   title={`Impersonate ${u.username}`}
+                                  aria-label={`Impersonate ${u.username}`}
                                 >
                                   <UserCheck className="w-3.5 h-3.5" />
                                 </button>
@@ -360,6 +362,7 @@ export default function ManageUsers() {
                                     onClick={() => openEditModal(u)}
                                     className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors cursor-pointer"
                                     title="Edit User"
+                                    aria-label={`Edit ${u.username}`}
                                   >
                                     <Edit2 className="w-3.5 h-3.5" />
                                   </button>
@@ -368,6 +371,7 @@ export default function ManageUsers() {
                                     disabled={u.id === user.id}
                                     className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                                     title="Delete User"
+                                    aria-label={`Delete ${u.username}`}
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
