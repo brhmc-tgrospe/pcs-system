@@ -10,19 +10,23 @@ use Tests\TestCase;
 class ItemPolicyTest extends TestCase
 {
     private ItemPolicy $policy;
+
     private User $developer;
+
     private User $admin;
+
     private User $staff;
+
     private Item $item;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->policy = new ItemPolicy();
+        $this->policy = new ItemPolicy;
         $this->developer = new User(['role' => 'developer']);
         $this->admin = new User(['role' => 'administrator']);
         $this->staff = new User(['role' => 'user']);
-        $this->item = new Item();
+        $this->item = new Item;
     }
 
     public function test_all_authenticated_users_can_view_items(): void
