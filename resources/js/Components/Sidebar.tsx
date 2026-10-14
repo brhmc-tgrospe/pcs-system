@@ -1,4 +1,4 @@
-import { LayoutDashboard, BookOpen, Settings, Boxes, Tags, FileBarChart, Users, Building } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Settings, Boxes, Tags, FileBarChart, Users, Building, Activity, SlidersHorizontal } from 'lucide-react';
 import { AuthUser } from '../types';
 
 interface SidebarProps {
@@ -32,6 +32,8 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
   const canManageBidders = Boolean(user.can?.manage_bidders);
   const canManageUsers = Boolean(user.can?.manage_users);
   const canViewLogs = Boolean(user.can?.view_logs);
+  const canManageSettings = Boolean(user.can?.manage_settings);
+  const isDeveloper = user.role === 'developer';
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -45,6 +47,8 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
     { id: 'print_report', label: 'Print Project Report', icon: FileBarChart },
     ...(canViewLogs ? [{ id: 'activity_logs', label: 'Activity Logs', icon: Settings, href: '/activity-logs' }] : []),
     ...(canManageUsers ? [{ id: 'users', label: 'Manage Users', icon: Users, href: '/users' }] : []),
+    ...(isDeveloper ? [{ id: 'system_health', label: 'System Health', icon: Activity, href: '/system-health' }] : []),
+    ...(canManageSettings ? [{ id: 'settings', label: 'Settings', icon: SlidersHorizontal, href: '/settings' }] : []),
   ];
 
   return (
@@ -95,9 +99,13 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
                   <a
                     key={item.id}
                     href={item.href}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group text-slate-400 hover:text-white hover:bg-slate-800"
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group
+                      ${isActive
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      }`}
                   >
-                    <Icon className="w-5 h-5 text-slate-500 group-hover:text-slate-300" />
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-blue-200' : 'text-slate-500 group-hover:text-slate-300'}`} />
                     {item.label}
                   </a>
                 );

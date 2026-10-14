@@ -5,6 +5,7 @@ use App\Http\Controllers\BidderController;
 use App\Http\Controllers\BidderImportController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DeveloperBackupController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ItemImportController;
@@ -83,6 +84,15 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:developer'])->group(function () {
         // Impersonation (start)
         Route::post('/impersonate/{user}', [ImpersonationController::class, 'impersonate'])->name('impersonate.start');
+
+        // Developer Backup & System Health Management
+        Route::get('/system-health', [DeveloperBackupController::class, 'page'])->name('system-health');
+        Route::get('/developer/backups', [DeveloperBackupController::class, 'index'])->name('developer.backups.index');
+        Route::post('/developer/backups/trigger', [DeveloperBackupController::class, 'trigger'])->name('developer.backups.trigger');
+        Route::get('/developer/backups/status', [DeveloperBackupController::class, 'status'])->name('developer.backups.status');
+        Route::get('/developer/backups/{filename}/download', [DeveloperBackupController::class, 'download'])->name('developer.backups.download');
+        Route::delete('/developer/backups/{filename}', [DeveloperBackupController::class, 'destroy'])->name('developer.backups.destroy');
+        Route::put('/developer/backups/schedule', [DeveloperBackupController::class, 'updateSchedule'])->name('developer.backups.schedule.update');
     });
 
     // Print report logging & view

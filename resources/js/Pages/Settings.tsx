@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { usePage, useForm, router } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import { Monitor, Save, Globe } from 'lucide-react';
 import Sidebar from '../Components/Sidebar';
 import Header from '../Components/Header';
@@ -44,7 +44,7 @@ export default function Settings({ auth, users, signatories = [] }: SettingsProp
       {isMobileOpen && (
         <div className="fixed inset-0 bg-slate-900/50 z-30 md:hidden backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
       )}
-      <Sidebar isMobileOpen={isMobileOpen} onCloseMobile={() => setIsMobileOpen(false)} user={auth.user} currentView="settings" onNavigate={(view) => router.visit('/catalog')} />
+      <Sidebar isMobileOpen={isMobileOpen} onCloseMobile={() => setIsMobileOpen(false)} user={auth.user} currentView="settings" onNavigate={() => router.visit('/catalog')} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {auth.user.is_impersonating && <ImpersonationBanner user={auth.user} />}

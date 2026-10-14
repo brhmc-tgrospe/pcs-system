@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Command,
   CornerDownLeft,
+  Database,
   LucideIcon
 } from 'lucide-react';
 import { AuthUser, SearchResults, Item, Category, Bidder, UserSummary } from '../types';
@@ -198,6 +199,18 @@ export default function CommandPalette({
         iconColor: 'text-fuchsia-500',
         category: 'Navigation',
         onSelect: () => router.visit('/users'),
+      });
+    }
+
+    if (user.role === 'developer') {
+      nav.push({
+        id: 'nav-system-health',
+        title: 'System Health & Backups',
+        subtitle: 'Live system diagnostic telemetry, MySQL dumps, and automation',
+        icon: Database,
+        iconColor: 'text-indigo-500',
+        category: 'Navigation',
+        onSelect: () => router.visit('/system-health'),
       });
     }
 

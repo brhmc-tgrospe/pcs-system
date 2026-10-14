@@ -142,10 +142,42 @@ export interface CatalogAppProps {
   auth: { user: AuthUser };
 }
 
+export interface BackupArchive {
+  filename: string;
+  size_bytes: number;
+  size_formatted: string;
+  created_at: string;
+  created_at_formatted?: string;
+  created_at_human: string;
+}
+
+export interface BackupSchedule {
+  id?: number;
+  frequency: 'weekly' | 'monthly';
+  day: number;
+  time: string;
+  is_enabled: boolean;
+  last_run_at?: string | null;
+  last_status?: string | null;
+}
+
+export interface BackupStatus {
+  status: 'idle' | 'running' | 'completed' | 'failed';
+  progress_percent: number;
+  step_message: string;
+  filename: string | null;
+  error_message: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+}
+
 export interface SettingsPageProps {
   auth: { user: AuthUser };
   users?: UserSummary[];
   signatories?: Signatory[];
+  backups?: BackupArchive[];
+  backupSchedule?: BackupSchedule;
+  backupStatus?: BackupStatus;
 }
 
 export interface ReportViewProps {
