@@ -1,19 +1,27 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Item extends Model
 {
     use SoftDeletes;
 
     public const STATUS_ACTIVE = 'Active';
+
     public const STATUS_NO_BID = 'No Bid';
+
     public const STATUS_PENDING_AWARD = 'Pending Award';
+
     public const STATUS_FAILED_BID = 'Failed Bid';
+
     public const STATUS_AWARDED = 'Awarded';
+
     public const STATUS_CLOSED = 'Closed';
 
     public const STATUSES = [
@@ -26,15 +34,14 @@ class Item extends Model
     ];
 
     protected $fillable = [
-        'item_code', 'name', 'description', 
-        'unit_type', 'unit_cost', 'quantity', 'abc', 'category_id', 'image_url', 'status', 'awarded_bidder_id'
+        'item_code', 'name', 'description',
+        'unit_type', 'unit_cost', 'quantity', 'abc', 'category_id', 'image_url', 'status', 'awarded_bidder_id',
     ];
 
-
     protected $casts = [
-        'unit_cost'      => 'decimal:2',
-        'quantity'       => 'decimal:2',
-        'abc'            => 'decimal:2',
+        'unit_cost' => 'decimal:2',
+        'quantity' => 'decimal:2',
+        'abc' => 'decimal:2',
     ];
 
     protected $appends = [
@@ -44,16 +51,17 @@ class Item extends Model
 
     public function getAwardedUnitCostAttribute(): ?float
     {
-        if ($this->status !== self::STATUS_AWARDED || !$this->awarded_bidder_id) {
+        if ($this->status !== self::STATUS_AWARDED || ! $this->awarded_bidder_id) {
             return null;
         }
 
         if ($this->relationLoaded('bidders')) {
             $bidder = $this->bidders->firstWhere('id', $this->awarded_bidder_id);
+
             return $bidder?->pivot?->unit_cost !== null ? (float) $bidder->pivot->unit_cost : null;
         }
 
-        $pivot = \Illuminate\Support\Facades\DB::table('item_bidder')
+        $pivot = DB::table('item_bidder')
             ->where('item_id', $this->id)
             ->where('bidder_id', $this->awarded_bidder_id)
             ->first();
@@ -70,7 +78,6 @@ class Item extends Model
 
         return round($unitCost * (float) $this->quantity, 2);
     }
-
 
     protected static function boot()
     {
@@ -99,7 +106,7 @@ class Item extends Model
         return $this->belongsTo(Bidder::class, 'awarded_bidder_id');
     }
 
-    public function bidders(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function bidders(): BelongsToMany
     {
         return $this->belongsToMany(Bidder::class, 'item_bidder')->withPivot('unit_cost')->withTimestamps();
     }

@@ -63,6 +63,9 @@ class SystemHealthCollector
                 SELECT 
                     TABLE_NAME AS `table`,
                     TABLE_ROWS AS `rows`,
+                    DATA_LENGTH AS `data_bytes`,
+                    INDEX_LENGTH AS `index_bytes`,
+                    (DATA_LENGTH + INDEX_LENGTH) AS `total_bytes`,
                     ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024, 2) AS `size_mb`,
                     ROUND(DATA_LENGTH / 1024 / 1024, 2) AS `data_mb`,
                     ROUND(INDEX_LENGTH / 1024 / 1024, 2) AS `index_mb`,
@@ -75,12 +78,22 @@ class SystemHealthCollector
             foreach ($tableStats as $stat) {
                 $size = (float) ($stat->size_mb ?? 0);
                 $totalSizeMb += $size;
+                $dataBytes = (int) ($stat->data_bytes ?? 0);
+                $indexBytes = (int) ($stat->index_bytes ?? 0);
+                $totalBytes = (int) ($stat->total_bytes ?? ($dataBytes + $indexBytes));
+
                 $tables[] = [
                     'table' => $stat->table,
                     'rows' => (int) ($stat->rows ?? 0),
                     'size_mb' => $size,
                     'data_mb' => (float) ($stat->data_mb ?? 0),
                     'index_mb' => (float) ($stat->index_mb ?? 0),
+                    'data_bytes' => $dataBytes,
+                    'index_bytes' => $indexBytes,
+                    'total_bytes' => $totalBytes,
+                    'data_size_formatted' => $this->formatBytes($dataBytes),
+                    'index_size_formatted' => $this->formatBytes($indexBytes),
+                    'total_size_formatted' => $this->formatBytes($totalBytes),
                     'collation' => $stat->collation ?? '',
                 ];
             }
@@ -100,6 +113,12 @@ class SystemHealthCollector
                             'size_mb' => 0.01,
                             'data_mb' => 0.01,
                             'index_mb' => 0.0,
+                            'data_bytes' => 10240,
+                            'index_bytes' => 0,
+                            'total_bytes' => 10240,
+                            'data_size_formatted' => '10 KB',
+                            'index_size_formatted' => '0 KB',
+                            'total_size_formatted' => '10 KB',
                             'collation' => 'binary',
                         ];
                     }
@@ -166,5 +185,23 @@ class SystemHealthCollector
             'pending_jobs' => $pendingJobs,
             'failed_jobs' => $failedJobs,
         ];
+    }
+
+    public function formatBytes(int|float $bytes): string
+    {
+        $bytes = max((float) $bytes, 0);
+        if ($bytes === 0.0) {
+            return '0 KB';
+        }
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $pow = floor(log($bytes) / log(1024));
+        $pow = min((int) $pow, count($units) - 1);
+        $val = $bytes / pow(1024, $pow);
+
+        if ($pow <= 1 || $val >= 100) {
+            return round($val).' '.$units[$pow];
+        }
+
+        return round($val, 1).' '.$units[$pow];
     }
 }

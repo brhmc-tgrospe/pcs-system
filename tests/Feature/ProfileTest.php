@@ -66,5 +66,4 @@ class ProfileTest extends TestCase
 
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
-
 }

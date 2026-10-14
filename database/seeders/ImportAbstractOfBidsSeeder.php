@@ -13,14 +13,16 @@ class ImportAbstractOfBidsSeeder extends Seeder
     public function run(): void
     {
         $csvPath = base_path('database/data/abstract_of_bids_raw.csv');
-        if (!file_exists($csvPath)) {
+        if (! file_exists($csvPath)) {
             $this->command->error("CSV file not found at: {$csvPath}");
+
             return;
         }
 
         $handle = fopen($csvPath, 'r');
-        if (!$handle) {
-            $this->command->error("Could not open CSV file.");
+        if (! $handle) {
+            $this->command->error('Could not open CSV file.');
+
             return;
         }
 
@@ -45,21 +47,27 @@ class ImportAbstractOfBidsSeeder extends Seeder
         }
         fclose($handle);
 
-        $this->command->info("Loaded " . count($rows) . " raw lines from CSV.");
+        $this->command->info('Loaded '.count($rows).' raw lines from CSV.');
 
         $cleanNumber = function ($val) {
-            if ($val === null) return null;
+            if ($val === null) {
+                return null;
+            }
             $val = trim((string) $val);
             if ($val === '' || strtoupper($val) === 'NO BID' || strtoupper($val) === 'NO BIDDER') {
                 return null;
             }
             $val = str_replace([',', '"', '₱', ' '], '', $val);
+
             return is_numeric($val) ? (float) $val : null;
         };
 
         $cleanText = function ($val) {
-            if ($val === null) return '';
+            if ($val === null) {
+                return '';
+            }
             $val = trim((string) $val);
+
             return trim($val, "\"' \t\n\r\0\x0B");
         };
 
@@ -68,7 +76,7 @@ class ImportAbstractOfBidsSeeder extends Seeder
         $currentItem = null;
 
         foreach ($rows as $row) {
-            if (empty(array_filter($row, fn($c) => trim((string)$c) !== ''))) {
+            if (empty(array_filter($row, fn ($c) => trim((string) $c) !== ''))) {
                 continue;
             }
 
@@ -96,7 +104,7 @@ class ImportAbstractOfBidsSeeder extends Seeder
             $itemsData[] = $currentItem;
         }
 
-        $this->command->info("Parsed " . count($itemsData) . " distinct items.");
+        $this->command->info('Parsed '.count($itemsData).' distinct items.');
 
         $bidderCache = [];
         $bidderCodeCounter = 1;
@@ -108,16 +116,17 @@ class ImportAbstractOfBidsSeeder extends Seeder
             }
 
             if (isset($bidderCache[$name])) {
-                if (!empty($location) && empty($bidderCache[$name]->location)) {
+                if (! empty($location) && empty($bidderCache[$name]->location)) {
                     $bidderCache[$name]->update([
                         'location' => $cleanText($location),
                         'address' => $cleanText($location),
                     ]);
                 }
+
                 return $bidderCache[$name];
             }
 
-            $code = 'BDR-' . str_pad((string) $bidderCodeCounter++, 3, '0', STR_PAD_LEFT);
+            $code = 'BDR-'.str_pad((string) $bidderCodeCounter++, 3, '0', STR_PAD_LEFT);
             $bidder = Bidder::firstOrCreate(
                 ['name' => $name],
                 [
@@ -127,7 +136,7 @@ class ImportAbstractOfBidsSeeder extends Seeder
                 ]
             );
 
-            if (!empty($location) && empty($bidder->location)) {
+            if (! empty($location) && empty($bidder->location)) {
                 $bidder->update([
                     'location' => $cleanText($location),
                     'address' => $cleanText($location),
@@ -135,6 +144,7 @@ class ImportAbstractOfBidsSeeder extends Seeder
             }
 
             $bidderCache[$name] = $bidder;
+
             return $bidder;
         };
 
@@ -145,7 +155,7 @@ class ImportAbstractOfBidsSeeder extends Seeder
             $itemNo = $itemInfo['item_no'];
             $fullDesc = $itemInfo['description'];
             $qty = $itemInfo['qty'] > 0 ? $itemInfo['qty'] : 1;
-            $unit = !empty($itemInfo['unit']) ? $itemInfo['unit'] : 'pc';
+            $unit = ! empty($itemInfo['unit']) ? $itemInfo['unit'] : 'pc';
             $unitCost = $itemInfo['unit_cost'];
             $abc = $itemInfo['abc'] > 0 ? $itemInfo['abc'] : ($unitCost * $qty);
 
@@ -153,11 +163,11 @@ class ImportAbstractOfBidsSeeder extends Seeder
             $parts = explode(',', $fullDesc, 2);
             $name = trim($parts[0] ?? "Item {$itemNo}");
             if (strlen($name) > 250) {
-                $name = substr($name, 0, 247) . '...';
+                $name = substr($name, 0, 247).'...';
             }
             $description = $fullDesc;
 
-            $itemCode = 'MED-' . str_pad((string) $itemNo, 3, '0', STR_PAD_LEFT);
+            $itemCode = 'MED-'.str_pad((string) $itemNo, 3, '0', STR_PAD_LEFT);
 
             $item = Item::create([
                 'item_code' => $itemCode,
@@ -178,12 +188,16 @@ class ImportAbstractOfBidsSeeder extends Seeder
                 $colValues = [];
                 if (isset($itemInfo['rank_cells'][$col])) {
                     $val = $cleanText($itemInfo['rank_cells'][$col]);
-                    if ($val !== '') $colValues[] = $val;
+                    if ($val !== '') {
+                        $colValues[] = $val;
+                    }
                 }
                 foreach ($itemInfo['extra_lines'] as $extra) {
                     if (isset($extra[$col])) {
                         $val = $cleanText($extra[$col]);
-                        if ($val !== '') $colValues[] = $val;
+                        if ($val !== '') {
+                            $colValues[] = $val;
+                        }
                     }
                 }
 
@@ -198,6 +212,7 @@ class ImportAbstractOfBidsSeeder extends Seeder
                     $token = $colValues[$p];
                     if (strtoupper($token) === 'NO BID' || strtoupper($token) === 'NO BIDDER') {
                         $p++;
+
                         continue;
                     }
 
@@ -220,7 +235,7 @@ class ImportAbstractOfBidsSeeder extends Seeder
                             }
                         }
 
-                        if (!empty($bidderName)) {
+                        if (! empty($bidderName)) {
                             $bidder = $getOrCreateBidder($bidderName, $bidderLocation);
                             if ($bidder) {
                                 $bidUnitCost = $qty > 0 ? ($totalPrice / $qty) : $totalPrice;
@@ -241,7 +256,7 @@ class ImportAbstractOfBidsSeeder extends Seeder
                             $bidderLocation = $colValues[$p];
                             $p++;
                         }
-                        if (!empty($bidderName)) {
+                        if (! empty($bidderName)) {
                             $bidder = $getOrCreateBidder($bidderName, $bidderLocation);
                             if ($bidder) {
                                 $item->bidders()->syncWithoutDetaching([
@@ -257,9 +272,9 @@ class ImportAbstractOfBidsSeeder extends Seeder
             }
         }
 
-        $this->command->info("=== Abstract of Bids Import Summary ===");
-        $this->command->info("Categories created: 1");
-        $this->command->info("Bidders registered: " . count($bidderCache));
+        $this->command->info('=== Abstract of Bids Import Summary ===');
+        $this->command->info('Categories created: 1');
+        $this->command->info('Bidders registered: '.count($bidderCache));
         $this->command->info("Items inserted: {$totalItemsCreated}");
         $this->command->info("Bidder bids attached: {$totalBidsAttached}");
     }

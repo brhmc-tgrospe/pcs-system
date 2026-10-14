@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Seeders;
 
 use App\Models\Category;
@@ -15,33 +16,33 @@ class DatabaseSeeder extends Seeder
         $developer = User::firstOrCreate(
             ['email' => 'developer@pcs.local'],
             [
-                'username'   => 'developer',
+                'username' => 'developer',
                 'first_name' => 'System',
-                'last_name'  => 'Developer',
-                'password'   => Hash::make('password'),
-                'role'       => 'developer',
+                'last_name' => 'Developer',
+                'password' => Hash::make('password'),
+                'role' => 'developer',
             ]
         );
 
         $admin = User::firstOrCreate(
             ['email' => 'admin@pcs.local'],
             [
-                'username'   => 'admin',
+                'username' => 'admin',
                 'first_name' => 'Portal',
-                'last_name'  => 'Administrator',
-                'password'   => Hash::make('password'),
-                'role'       => 'administrator',
+                'last_name' => 'Administrator',
+                'password' => Hash::make('password'),
+                'role' => 'administrator',
             ]
         );
 
         $staff = User::firstOrCreate(
             ['email' => 'staff@pcs.local'],
             [
-                'username'   => 'staff',
+                'username' => 'staff',
                 'first_name' => 'Staff',
-                'last_name'  => 'User',
-                'password'   => Hash::make('password'),
-                'role'       => 'user',
+                'last_name' => 'User',
+                'password' => Hash::make('password'),
+                'role' => 'user',
             ]
         );
 

@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Bidder extends Model
 {
@@ -12,7 +12,7 @@ class Bidder extends Model
 
     protected $fillable = [
         'name', 'contact_person', 'contact_number', 'email', 'address', 'location', 'bidder_code',
-        'brand_name', 'country_of_origin'
+        'brand_name', 'country_of_origin',
     ];
 
     protected $appends = [

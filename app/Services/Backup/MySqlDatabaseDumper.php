@@ -33,10 +33,14 @@ class MySqlDatabaseDumper implements DatabaseDumperInterface
         $binary = $this->resolveBinaryPath();
 
         if ($binary !== null) {
-            return $this->dumpViaBinary($binary, $connectionConfig, $targetGzPath);
+            try {
+                return $this->dumpViaBinary($binary, $connectionConfig, $targetGzPath);
+            } catch (\Throwable $e) {
+                Log::warning('mysqldump binary execution failed ('.$e->getMessage().'). Falling back to pure PHP PDO streaming dumper.');
+            }
         }
 
-        Log::warning('mysqldump binary not found. Falling back to pure PHP chunked streaming dumper.');
+        Log::info('Using pure PHP chunked streaming dumper.');
 
         return $this->dumpViaPdoFallback($targetGzPath);
     }
@@ -69,6 +73,7 @@ class MySqlDatabaseDumper implements DatabaseDumperInterface
             "--defaults-extra-file={$tempCnf}",
             "--host={$host}",
             "--port={$port}",
+            '--protocol=tcp',
             "--default-character-set={$charset}",
             '--single-transaction',
             '--quick',
@@ -78,8 +83,20 @@ class MySqlDatabaseDumper implements DatabaseDumperInterface
             $database,
         ];
 
+        $env = [
+            'SystemRoot' => getenv('SystemRoot') ?: (getenv('WINDIR') ?: 'C:\\Windows'),
+            'WINDIR' => getenv('WINDIR') ?: (getenv('SystemRoot') ?: 'C:\\Windows'),
+            'PATH' => getenv('PATH') ?: 'C:\\Windows\\system32;C:\\Windows',
+            'TEMP' => getenv('TEMP') ?: sys_get_temp_dir(),
+            'TMP' => getenv('TMP') ?: sys_get_temp_dir(),
+            'SYSTEMDRIVE' => getenv('SYSTEMDRIVE') ?: 'C:',
+        ];
+        if (! empty($_SERVER)) {
+            $env = array_merge($_SERVER, $env);
+        }
+
         try {
-            $process = new Process($command);
+            $process = new Process($command, null, $env);
             $process->setTimeout(1800); // 30 minutes max for massive databases
 
             $process->run(function ($type, $buffer) use ($gzHandle) {
@@ -88,7 +105,8 @@ class MySqlDatabaseDumper implements DatabaseDumperInterface
                 }
             });
 
-            gzclose($gzHandle);
+            @gzclose($gzHandle);
+            $gzHandle = null;
 
             if (! $process->isSuccessful()) {
                 @unlink($targetGzPath);
@@ -97,6 +115,9 @@ class MySqlDatabaseDumper implements DatabaseDumperInterface
 
             return true;
         } finally {
+            if ($gzHandle !== null) {
+                @gzclose($gzHandle);
+            }
             if (file_exists($tempCnf)) {
                 @unlink($tempCnf);
             }

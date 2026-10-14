@@ -24,9 +24,9 @@ class BidderImportTest extends TestCase
 
     public function test_can_import_bidders_from_valid_csv(): void
     {
-        $csvContent = "Bidder Code,Bidder Name,Contact Person,Contact Number,Email,Address,Location\n" .
-            "BDR-101,Alpha Medtech Corporation,Juan Dela Cruz,+63 912 345 6789,alpha@example.com,\"123 Medical Drive, Manila\",Manila City\n" .
-            "BDR-102,Beta Diagnostics Inc.,Maria Santos,+63 920 987 6543,beta@example.com,\"456 Science Ave, Quezon City\",Quezon City\n" .
+        $csvContent = "Bidder Code,Bidder Name,Contact Person,Contact Number,Email,Address,Location\n".
+            "BDR-101,Alpha Medtech Corporation,Juan Dela Cruz,+63 912 345 6789,alpha@example.com,\"123 Medical Drive, Manila\",Manila City\n".
+            "BDR-102,Beta Diagnostics Inc.,Maria Santos,+63 920 987 6543,beta@example.com,\"456 Science Ave, Quezon City\",Quezon City\n".
             "BDR-103,Gamma Healthcare,Pedro Reyes,+63 933 111 2222,gamma@example.com,\"789 Pharma Road, Pasig City\",Pasig City\n";
 
         $file = UploadedFile::fake()->createWithContent('bidders.csv', $csvContent);
@@ -51,7 +51,7 @@ class BidderImportTest extends TestCase
 
     public function test_import_fails_when_required_columns_are_missing(): void
     {
-        $csvContent = "Contact Person,Email,Address\n" .
+        $csvContent = "Contact Person,Email,Address\n".
             "Juan,juan@example.com,Manila\n";
 
         $file = UploadedFile::fake()->createWithContent('bidders.csv', $csvContent);
@@ -72,10 +72,10 @@ class BidderImportTest extends TestCase
             'name' => 'Already Existing Corp',
         ]);
 
-        $csvContent = "Bidder Code,Bidder Name,Contact Person,Contact Number,Email,Address\n" .
-            "BDR-NEW-1,New Company 1,John,123,john@example.com,Address 1\n" .
-            "BDR-EXISTING,Duplicate Existing,Jane,456,jane@example.com,Address 2\n" .
-            "BDR-DUP-CSV,Duplicate In CSV,Bob,789,bob@example.com,Address 3\n" .
+        $csvContent = "Bidder Code,Bidder Name,Contact Person,Contact Number,Email,Address\n".
+            "BDR-NEW-1,New Company 1,John,123,john@example.com,Address 1\n".
+            "BDR-EXISTING,Duplicate Existing,Jane,456,jane@example.com,Address 2\n".
+            "BDR-DUP-CSV,Duplicate In CSV,Bob,789,bob@example.com,Address 3\n".
             "BDR-DUP-CSV,Duplicate In CSV Again,Alice,012,alice@example.com,Address 4\n";
 
         $file = UploadedFile::fake()->createWithContent('bidders.csv', $csvContent);
@@ -92,8 +92,8 @@ class BidderImportTest extends TestCase
 
     public function test_import_validates_email_format(): void
     {
-        $csvContent = "Bidder Code,Bidder Name,Email\n" .
-            "BDR-201,Good Email Inc,good@example.com\n" .
+        $csvContent = "Bidder Code,Bidder Name,Email\n".
+            "BDR-201,Good Email Inc,good@example.com\n".
             "BDR-202,Bad Email Inc,invalid-email-format\n";
 
         $file = UploadedFile::fake()->createWithContent('bidders.csv', $csvContent);
@@ -109,8 +109,8 @@ class BidderImportTest extends TestCase
 
     public function test_can_import_bidders_with_brand_name_and_origin_columns(): void
     {
-        $csvContent = "Bidder Code,Bidder Name,Brand Name,Origin\n" .
-            "BDR-301,Biologix Philippines,Biologix,China\n" .
+        $csvContent = "Bidder Code,Bidder Name,Brand Name,Origin\n".
+            "BDR-301,Biologix Philippines,Biologix,China\n".
             "BDR-302,Karl Storz Distributor,Karl Storz,Germany\n";
 
         $file = UploadedFile::fake()->createWithContent('bidders.csv', $csvContent);

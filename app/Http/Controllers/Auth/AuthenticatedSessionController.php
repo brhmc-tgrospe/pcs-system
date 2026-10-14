@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -17,7 +18,7 @@ class AuthenticatedSessionController extends Controller
     {
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
-            'status'           => session('status'),
+            'status' => session('status'),
         ]);
     }
 
@@ -26,7 +27,7 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
-        ActivityLog::log('login', 'User ' . Auth::user()->username . ' logged in.');
+        ActivityLog::log('login', 'User '.Auth::user()->username.' logged in.');
 
         return redirect()->intended(route('catalog', absolute: false));
     }
@@ -34,7 +35,7 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         $user = Auth::user();
-        ActivityLog::log('logout', 'User ' . ($user?->username ?? 'unknown') . ' logged out.');
+        ActivityLog::log('logout', 'User '.($user?->username ?? 'unknown').' logged out.');
 
         Auth::guard('web')->logout();
         $request->session()->invalidate();

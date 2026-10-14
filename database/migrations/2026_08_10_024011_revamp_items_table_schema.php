@@ -31,7 +31,7 @@ return new class extends Migration
         Schema::table('items', function (Blueprint $table) {
             $table->renameColumn('unit_cost', 'unit_price');
             $table->dropColumn(['quantity', 'abc']);
-            
+
             $table->json('specifications')->nullable();
             $table->boolean('is_active')->default(true);
             $table->json('price_referral')->nullable();

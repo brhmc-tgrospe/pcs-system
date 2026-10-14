@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             // Can be: 'user', 'administrator', 'developer'
-            $table->string('role')->default('user'); 
+            $table->string('role')->default('user');
         });
     }
 

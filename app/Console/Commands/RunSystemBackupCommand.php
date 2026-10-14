@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\BackupScheduleSetting;
 use App\Services\Backup\BackupArchiveService;
 use Illuminate\Console\Command;
 
@@ -33,10 +34,30 @@ class RunSystemBackupCommand extends Command
                 $this->line("[{$percent}%] {$message}");
             });
 
+            try {
+                $schedule = BackupScheduleSetting::current();
+                $schedule->update([
+                    'last_run_at' => now(BackupArchiveService::TIMEZONE),
+                    'last_status' => 'success',
+                ]);
+            } catch (\Throwable $ignored) {
+            }
+
             $this->info("Backup completed successfully: {$filename}");
+
             return Command::SUCCESS;
         } catch (\Throwable $e) {
-            $this->error("Backup generation failed: " . $e->getMessage());
+            try {
+                $schedule = BackupScheduleSetting::current();
+                $schedule->update([
+                    'last_run_at' => now(BackupArchiveService::TIMEZONE),
+                    'last_status' => 'failed',
+                ]);
+            } catch (\Throwable $ignored) {
+            }
+
+            $this->error('Backup generation failed: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }

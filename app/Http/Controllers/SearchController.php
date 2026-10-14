@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Item;
-use App\Models\Category;
 use App\Models\Bidder;
+use App\Models\Category;
+use App\Models\Item;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
@@ -21,17 +21,17 @@ class SearchController extends Controller
                 'items' => [],
                 'categories' => [],
                 'bidders' => [],
-                'users' => []
+                'users' => [],
             ]);
         }
 
         // 1. Items (Active items matching name, item_code, or description)
         $items = Item::with('category')
             ->where('is_active', true)
-            ->where(function($q) use ($query) {
+            ->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('item_code', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%");
+                    ->orWhere('item_code', 'like', "%{$query}%")
+                    ->orWhere('description', 'like', "%{$query}%");
             })
             ->limit(6)
             ->get();
@@ -54,11 +54,11 @@ class SearchController extends Controller
                 ->limit(6)
                 ->get();
 
-            $userQuery = User::where(function($q) use ($query) {
+            $userQuery = User::where(function ($q) use ($query) {
                 $q->where('username', 'like', "%{$query}%")
-                  ->orWhere('first_name', 'like', "%{$query}%")
-                  ->orWhere('last_name', 'like', "%{$query}%")
-                  ->orWhere('email', 'like', "%{$query}%");
+                    ->orWhere('first_name', 'like', "%{$query}%")
+                    ->orWhere('last_name', 'like', "%{$query}%")
+                    ->orWhere('email', 'like', "%{$query}%");
             });
 
             if ($user->role === 'administrator') {
@@ -72,8 +72,7 @@ class SearchController extends Controller
             'items' => $items,
             'categories' => $categories,
             'bidders' => $bidders,
-            'users' => $users
+            'users' => $users,
         ]);
     }
 }
-

@@ -14,6 +14,7 @@ class ItemTest extends TestCase
     use RefreshDatabase;
 
     protected User $adminUser;
+
     protected Category $category;
 
     protected function setUp(): void

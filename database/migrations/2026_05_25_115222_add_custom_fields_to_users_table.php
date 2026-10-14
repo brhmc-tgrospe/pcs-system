@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('username')->unique()->after('id');
             $table->string('first_name')->after('username');
             $table->string('last_name')->after('first_name');
-            
+
             // We can drop the original "name" column since we have first & last now
             $table->dropColumn('name');
         });

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Backup\Contracts\DatabaseDumperInterface;
+use App\Services\Backup\MySqlDatabaseDumper;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,8 +15,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(
-            \App\Services\Backup\Contracts\DatabaseDumperInterface::class,
-            \App\Services\Backup\MySqlDatabaseDumper::class
+            DatabaseDumperInterface::class,
+            MySqlDatabaseDumper::class
         );
     }
 

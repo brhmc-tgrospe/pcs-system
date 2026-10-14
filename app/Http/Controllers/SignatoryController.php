@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Signatory;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class SignatoryController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || !in_array($user->role, ['administrator', 'developer'])) {
+        if (! $user || ! in_array($user->role, ['administrator', 'developer'])) {
             return back()->with('error', 'Unauthorized access.');
         }
 
@@ -21,7 +21,7 @@ class SignatoryController extends Controller
             'order' => ['nullable', 'integer'],
         ]);
 
-        if (!isset($validated['order'])) {
+        if (! isset($validated['order'])) {
             $maxOrder = Signatory::max('order') ?? 0;
             $validated['order'] = $maxOrder + 1;
         }
@@ -36,7 +36,7 @@ class SignatoryController extends Controller
     public function update(Request $request, Signatory $signatory): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || !in_array($user->role, ['administrator', 'developer'])) {
+        if (! $user || ! in_array($user->role, ['administrator', 'developer'])) {
             return back()->with('error', 'Unauthorized access.');
         }
 
@@ -55,7 +55,7 @@ class SignatoryController extends Controller
     public function destroy(Signatory $signatory): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || !in_array($user->role, ['administrator', 'developer'])) {
+        if (! $user || ! in_array($user->role, ['administrator', 'developer'])) {
             return back()->with('error', 'Unauthorized access.');
         }
 
@@ -67,7 +67,7 @@ class SignatoryController extends Controller
     public function reorder(Request $request): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || !in_array($user->role, ['administrator', 'developer'])) {
+        if (! $user || ! in_array($user->role, ['administrator', 'developer'])) {
             return back()->with('error', 'Unauthorized access.');
         }
 

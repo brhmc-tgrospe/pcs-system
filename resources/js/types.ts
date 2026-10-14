@@ -142,6 +142,21 @@ export interface CatalogAppProps {
   auth: { user: AuthUser };
 }
 
+export interface DatabaseTableBreakdown {
+  table: string;
+  rows: number;
+  size_mb: number;
+  data_mb: number;
+  index_mb: number;
+  data_bytes?: number;
+  index_bytes?: number;
+  total_bytes?: number;
+  data_size_formatted?: string;
+  index_size_formatted?: string;
+  total_size_formatted?: string;
+  collation?: string;
+}
+
 export interface BackupArchive {
   filename: string;
   size_bytes: number;

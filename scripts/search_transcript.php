@@ -9,7 +9,7 @@ while (($line = fgets($fp)) !== false) {
             // Find matches in content
             if (preg_match_all('/.{0,100}(?:Endure, China|option).{0,100}/i', $data['content'], $matches)) {
                 foreach (array_slice($matches[0], 0, 5) as $m) {
-                    echo "[Match " . (++$count) . "]: " . trim($m) . "\n";
+                    echo '[Match '.(++$count).']: '.trim($m)."\n";
                 }
             }
         }

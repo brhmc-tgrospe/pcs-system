@@ -12,10 +12,13 @@ import {
   HardDrive, 
   ShieldCheck,
   FileArchive,
-  ArrowRight
+  ArrowRight,
+  Layers,
+  Search,
+  X
 } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
-import { BackupArchive, BackupSchedule, BackupStatus } from '../types';
+import { BackupArchive, BackupSchedule, BackupStatus, DatabaseTableBreakdown } from '../types';
 
 interface DeveloperBackupSectionProps {
   initialBackups?: BackupArchive[];
@@ -49,6 +52,23 @@ export default function DeveloperBackupSection({
   const [deletingFilename, setDeletingFilename] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isTablesModalOpen, setIsTablesModalOpen] = useState(false);
+  const [tableSearch, setTableSearch] = useState('');
+
+  // Close tables breakdown modal on Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isTablesModalOpen) {
+        setIsTablesModalOpen(false);
+      }
+    };
+    if (isTablesModalOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isTablesModalOpen]);
 
   // Sync state if props change
   useEffect(() => {
@@ -60,6 +80,12 @@ export default function DeveloperBackupSection({
       setSchedule(initialSchedule);
     }
   }, [initialSchedule]);
+
+  useEffect(() => {
+    if (initialStatus) {
+      setStatus(initialStatus);
+    }
+  }, [initialStatus]);
 
   // Real-time polling while backup job is running
   useEffect(() => {
@@ -77,7 +103,7 @@ export default function DeveloperBackupSection({
 
             if (data.status === 'completed' || data.status === 'failed') {
               // Refresh backup list when finished
-              router.reload({ only: ['backups', 'backupStatus', 'backupSchedule'] });
+              router.reload({ only: ['backups', 'backupStatus', 'backupSchedule', 'systemHealth'] });
             }
           }
         } catch (e) {
@@ -95,17 +121,26 @@ export default function DeveloperBackupSection({
     if (status.status === 'running' || isTriggering) return;
 
     setIsTriggering(true);
+    setStatus(prev => ({
+      ...prev,
+      status: 'running',
+      progress_percent: 15,
+      step_message: 'Generating system backup and health diagnostics...',
+    }));
+
     router.post(
       '/developer/backups/trigger',
       {},
       {
         preserveScroll: true,
         onSuccess: () => {
+          router.reload({ only: ['backups', 'backupStatus', 'backupSchedule', 'systemHealth'] });
+        },
+        onError: () => {
           setStatus(prev => ({
             ...prev,
-            status: 'running',
-            progress_percent: 5,
-            step_message: 'Starting backup job...',
+            status: 'failed',
+            error_message: 'Backup generation failed.',
           }));
         },
         onFinish: () => {
@@ -167,6 +202,27 @@ export default function DeveloperBackupSection({
     'Friday',
     'Saturday',
   ];
+
+  const databaseTables: DatabaseTableBreakdown[] = initialHealth?.database?.tables || [];
+  const filteredTables = databaseTables.filter(t =>
+    t.table.toLowerCase().includes(tableSearch.trim().toLowerCase())
+  );
+
+  const formatRowBytes = (bytes?: number, fallbackMb?: number): string => {
+    if (typeof bytes === 'number' && bytes >= 0) {
+      if (bytes >= 1024 * 1024) {
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+      return Math.round(bytes / 1024) + ' KB';
+    }
+    if (typeof fallbackMb === 'number') {
+      if (fallbackMb >= 1) {
+        return fallbackMb.toFixed(1) + ' MB';
+      }
+      return Math.round(fallbackMb * 1024) + ' KB';
+    }
+    return '0 KB';
+  };
 
   return (
     <div id="system-health-section" className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden scroll-mt-6">
@@ -270,10 +326,29 @@ export default function DeveloperBackupSection({
                 <div className="text-[11px] text-slate-400 mt-0.5">Limit: {initialHealth.host?.memory_limit}</div>
               </div>
 
-              <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200/60 dark:border-slate-700 shadow-2xs">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">MySQL Database</span>
-                <div className="text-sm font-bold text-slate-900 dark:text-white mt-1">{initialHealth.database?.total_size_mb} MB</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">{initialHealth.database?.tables_count} Tables ({initialHealth.database?.database_name})</div>
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200/60 dark:border-slate-700 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">MySQL Database</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsTablesModalOpen(true)}
+                      title="View database tables breakdown"
+                      className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors p-0.5 rounded cursor-pointer"
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white mt-1">{initialHealth.database?.total_size_mb} MB</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">{initialHealth.database?.tables_count} Tables ({initialHealth.database?.database_name})</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsTablesModalOpen(true)}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline cursor-pointer text-left"
+                >
+                  <span>View tables breakdown &rarr;</span>
+                </button>
               </div>
 
               <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200/60 dark:border-slate-700 shadow-2xs">
@@ -519,6 +594,134 @@ export default function DeveloperBackupSection({
         confirmColor="rose"
         Icon={Trash2}
       />
+
+      {/* Database Tables Breakdown Modal */}
+      {isTablesModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsTablesModalOpen(false);
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tables-breakdown-title"
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-4xl w-full p-6 space-y-4 max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <h3 id="tables-breakdown-title" className="text-lg font-bold text-slate-900 dark:text-white">
+                  Database Tables Breakdown
+                </h3>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-slate-500 dark:text-slate-400 hidden sm:inline">
+                  {databaseTables.length} tables recorded via information_schema
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsTablesModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  aria-label="Close modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Optional Table Filter */}
+            {databaseTables.length > 5 && (
+              <div className="relative shrink-0">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={tableSearch}
+                  onChange={e => setTableSearch(e.target.value)}
+                  placeholder="Filter tables..."
+                  className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+              </div>
+            )}
+
+            {/* Table Container */}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col min-h-0 bg-white dark:bg-slate-900">
+              <div className="overflow-y-auto max-h-[60vh]">
+                <table className="w-full border-collapse text-left">
+                  <thead className="sticky top-0 bg-[#f8fafc] dark:bg-slate-800/95 border-b border-slate-200 dark:border-slate-700 z-10">
+                    <tr>
+                      <th scope="col" className="py-3 px-5 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        Table
+                      </th>
+                      <th scope="col" className="py-3 px-5 text-sm font-semibold text-slate-700 dark:text-slate-200 text-right">
+                        Est. Rows
+                      </th>
+                      <th scope="col" className="py-3 px-5 text-sm font-semibold text-slate-700 dark:text-slate-200 text-right">
+                        Data Size
+                      </th>
+                      <th scope="col" className="py-3 px-5 text-sm font-semibold text-slate-700 dark:text-slate-200 text-right">
+                        Index Size
+                      </th>
+                      <th scope="col" className="py-3 px-5 text-sm font-semibold text-slate-700 dark:text-slate-200 text-right">
+                        Total Size
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                    {filteredTables.length > 0 ? (
+                      filteredTables.map((t) => (
+                        <tr
+                          key={t.table}
+                          className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors"
+                        >
+                          <td className="py-3.5 px-5 font-mono text-sm text-slate-700 dark:text-slate-300">
+                            {t.table}
+                          </td>
+                          <td className="py-3.5 px-5 text-sm text-slate-600 dark:text-slate-400 text-right">
+                            {t.rows.toLocaleString()}
+                          </td>
+                          <td className="py-3.5 px-5 text-sm text-slate-600 dark:text-slate-400 text-right">
+                            {t.data_size_formatted || formatRowBytes(t.data_bytes, t.data_mb)}
+                          </td>
+                          <td className="py-3.5 px-5 text-sm text-slate-600 dark:text-slate-400 text-right">
+                            {t.index_size_formatted || formatRowBytes(t.index_bytes, t.index_mb)}
+                          </td>
+                          <td className="py-3.5 px-5 text-sm font-bold text-slate-900 dark:text-white text-right">
+                            {t.total_size_formatted || formatRowBytes(t.total_bytes, t.size_mb)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="py-8 text-center text-sm text-slate-500 dark:text-slate-400"
+                        >
+                          {tableSearch ? 'No tables match your filter.' : 'No table metrics recorded.'}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-2 flex items-center justify-between shrink-0">
+              <span className="text-xs text-slate-400 dark:text-slate-500">
+                Sorted by Total Size (descending)
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsTablesModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

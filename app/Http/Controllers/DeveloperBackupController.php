@@ -66,7 +66,7 @@ class DeveloperBackupController extends Controller
     }
 
     /**
-     * Dispatch on-demand asynchronous backup job.
+     * Trigger on-demand backup generation (synchronous by default, async if ?async=1).
      */
     public function trigger(Request $request): JsonResponse|RedirectResponse
     {
@@ -82,18 +82,54 @@ class DeveloperBackupController extends Controller
             return back()->with('error', 'A backup process is already running.');
         }
 
-        CreateSystemBackupJob::dispatch('manual');
+        if ($request->boolean('async')) {
+            CreateSystemBackupJob::dispatch('manual');
 
-        ActivityLog::log('system_backup_triggered', 'Developer initiated an on-demand database backup.');
+            ActivityLog::log('system_backup_triggered', 'Developer initiated an asynchronous on-demand database backup.');
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'message' => 'System backup job has been dispatched.',
-                'status' => 'running',
-            ], 202);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'System backup job has been dispatched.',
+                    'status' => 'running',
+                ], 202);
+            }
+
+            return back()->with('success', 'Backup generation initiated.');
         }
 
-        return back()->with('success', 'Backup generation initiated.');
+        @set_time_limit(300);
+
+        try {
+            CreateSystemBackupJob::dispatchSync('manual');
+
+            ActivityLog::log('system_backup_triggered', 'Developer generated an on-demand database backup.');
+
+            $latestStatus = Cache::get(CreateSystemBackupJob::CACHE_KEY, [
+                'status' => 'completed',
+                'progress_percent' => 100,
+                'step_message' => 'Backup created successfully.',
+            ]);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'System backup created successfully.',
+                    'status' => $latestStatus,
+                    'backups' => $this->archiveService->listBackups(),
+                ], 200);
+            }
+
+            return back()->with('success', 'Backup created successfully.');
+        } catch (\Throwable $e) {
+            ActivityLog::log('system_backup_failed', 'On-demand backup generation failed: '.$e->getMessage());
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'Backup generation failed: '.$e->getMessage(),
+                ], 500);
+            }
+
+            return back()->with('error', 'Backup generation failed: '.$e->getMessage());
+        }
     }
 
     /**

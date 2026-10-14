@@ -1,11 +1,12 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Bidder;
-use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BidderImportController extends Controller
 {
@@ -18,14 +19,15 @@ class BidderImportController extends Controller
         $file = $request->file('csv_file');
         $handle = fopen($file->getRealPath(), 'r');
 
-        if (!$handle) {
+        if (! $handle) {
             return back()->with('error', 'Could not open the uploaded file.');
         }
 
         // Read header
         $header = fgetcsv($handle);
-        if (!$header) {
+        if (! $header) {
             fclose($handle);
+
             return back()->with('error', 'The uploaded file is empty or invalid.');
         }
 
@@ -49,11 +51,13 @@ class BidderImportController extends Controller
 
         if ($codeColIndex === null) {
             fclose($handle);
+
             return back()->with('error', "Missing required column in CSV header: 'Bidder Code'");
         }
 
         if ($nameColIndex === null) {
             fclose($handle);
+
             return back()->with('error', "Missing required column in CSV header: 'Bidder Name' (or 'Name')");
         }
 
@@ -87,7 +91,7 @@ class BidderImportController extends Controller
                 $origin = $originColIndex !== null ? trim($row[$originColIndex] ?? '') : null;
 
                 // If brand/origin not explicitly given but location is, handle comma split if present
-                if (empty($brandName) && empty($origin) && !empty($location) && str_contains($location, ',')) {
+                if (empty($brandName) && empty($origin) && ! empty($location) && str_contains($location, ',')) {
                     $parts = array_map('trim', explode(',', $location, 2));
                     $brandName = $parts[0] ?? null;
                     $origin = $parts[1] ?? null;
@@ -109,7 +113,7 @@ class BidderImportController extends Controller
                     throw new Exception("Duplicate Bidder Code '{$bidderCode}' found in CSV on line {$lineNumber}.");
                 }
 
-                if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                if (! empty($email) && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     throw new Exception("Invalid email format '{$email}' on line {$lineNumber}.");
                 }
 
@@ -138,7 +142,8 @@ class BidderImportController extends Controller
         fclose($handle);
 
         if (count($errors) > 0) {
-            $errorMsg = "Imported {$importedCount} bidders, but encountered " . count($errors) . " errors.";
+            $errorMsg = "Imported {$importedCount} bidders, but encountered ".count($errors).' errors.';
+
             return back()->with('success', $errorMsg)->with('import_errors', $errors);
         }
 

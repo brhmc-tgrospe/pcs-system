@@ -1,15 +1,15 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
-use App\Models\Item;
 use App\Models\Category;
-use Illuminate\Http\Request;
+use App\Models\Item;
+use App\Models\Signatory;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-
-use App\Models\Signatory;
 
 class PrintReportController extends Controller
 {
@@ -23,7 +23,7 @@ class PrintReportController extends Controller
         ]);
 
         $categoryNames = implode(', ', $validated['categories']);
-        $contractInfo = !empty($validated['contract_name']) ? " for '{$validated['contract_name']}'" : '';
+        $contractInfo = ! empty($validated['contract_name']) ? " for '{$validated['contract_name']}'" : '';
         ActivityLog::log(
             'report_printed',
             "Report generated{$contractInfo} with {$validated['item_count']} item(s) from categories: {$categoryNames}."
@@ -35,14 +35,14 @@ class PrintReportController extends Controller
     public function show(Request $request): Response
     {
         $itemIds = array_filter(explode(',', $request->query('items', '')));
-        
+
         $items = Item::with(['category', 'bidders' => function ($q) {
-                $q->orderBy('name');
-            }])
+            $q->orderBy('name');
+        }])
             ->whereIn('id', $itemIds)
             ->orderBy('item_code')
             ->get();
-            
+
         // Group items by category for easier rendering in frontend
         $categories = Category::whereIn('id', $items->pluck('category_id')->unique())->orderBy('name')->get();
         $signatories = Signatory::where('is_active', true)->orderBy('order')->get();

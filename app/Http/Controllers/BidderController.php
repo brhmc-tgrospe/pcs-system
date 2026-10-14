@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bidder;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,8 +14,9 @@ class BidderController extends Controller
     public function index(): Response
     {
         $bidders = Bidder::withTrashed()->get();
+
         return Inertia::render('Bidders', [
-            'bidders' => $bidders
+            'bidders' => $bidders,
         ]);
     }
 
@@ -43,7 +44,7 @@ class BidderController extends Controller
 
             DB::transaction(function () use ($validated) {
                 foreach ($validated['bidders'] as $bidderData) {
-                    if (!empty($bidderData['origin']) && empty($bidderData['country_of_origin'])) {
+                    if (! empty($bidderData['origin']) && empty($bidderData['country_of_origin'])) {
                         $bidderData['country_of_origin'] = $bidderData['origin'];
                     }
                     Bidder::create($bidderData);
@@ -51,6 +52,7 @@ class BidderController extends Controller
             });
 
             $count = count($validated['bidders']);
+
             return back()->with('success', $count > 1 ? "{$count} bidders added successfully." : 'Bidder added successfully.');
         }
 
@@ -67,7 +69,7 @@ class BidderController extends Controller
             'origin' => ['nullable', 'string', 'max:255'],
         ]);
 
-        if (!empty($validated['origin']) && empty($validated['country_of_origin'])) {
+        if (! empty($validated['origin']) && empty($validated['country_of_origin'])) {
             $validated['country_of_origin'] = $validated['origin'];
         }
 
@@ -80,7 +82,7 @@ class BidderController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'bidder_code' => ['required', 'string', 'max:255', 'unique:bidders,bidder_code,' . $bidder->id],
+            'bidder_code' => ['required', 'string', 'max:255', 'unique:bidders,bidder_code,'.$bidder->id],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'contact_number' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -91,7 +93,7 @@ class BidderController extends Controller
             'origin' => ['nullable', 'string', 'max:255'],
         ]);
 
-        if (!empty($validated['origin']) && empty($validated['country_of_origin'])) {
+        if (! empty($validated['origin']) && empty($validated['country_of_origin'])) {
             $validated['country_of_origin'] = $validated['origin'];
         }
 
@@ -107,6 +109,7 @@ class BidderController extends Controller
         }
 
         $bidder->delete();
+
         return back()->with('success', "Bidder '{$bidder->name}' deleted successfully.");
     }
 
@@ -114,6 +117,7 @@ class BidderController extends Controller
     {
         $bidder = Bidder::withTrashed()->findOrFail($id);
         $bidder->restore();
+
         return back()->with('success', "Bidder '{$bidder->name}' restored successfully.");
     }
 }

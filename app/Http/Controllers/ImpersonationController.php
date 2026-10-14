@@ -1,8 +1,9 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -39,8 +40,8 @@ class ImpersonationController extends Controller
         }
 
         $impersonatedUser = Auth::user();
-        $impersonatorId   = session()->pull('impersonator_id');
-        $originalUser     = User::findOrFail($impersonatorId);
+        $impersonatorId = session()->pull('impersonator_id');
+        $originalUser = User::findOrFail($impersonatorId);
 
         Auth::login($originalUser);
 
