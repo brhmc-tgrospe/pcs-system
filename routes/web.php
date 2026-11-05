@@ -30,7 +30,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/projects/search', [SearchController::class, 'index'])->name('projects.search');
 
     // Category and Item Management (admin + developer, enforced by CategoryPolicy & ItemPolicy)
-    Route::middleware(['role:administrator,developer'])->group(function () {
+    Route::middleware(['role:administrator,superadmin,developer'])->group(function () {
         Route::post('/catalog/categories', [CategoryController::class, 'store'])->name('categories.store');
         Route::put('/catalog/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/catalog/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
@@ -58,8 +58,8 @@ Route::middleware(['auth'])->group(function () {
     // Leave impersonation (any authenticated user who is impersonating)
     Route::post('/impersonate/leave', [ImpersonationController::class, 'leave'])->name('impersonate.leave');
 
-    // Impersonation & User Management (developer only)
-    Route::middleware(['role:administrator,developer'])->group(function () {
+    // Impersonation & User Management
+    Route::middleware(['role:administrator,superadmin,developer'])->group(function () {
         // User Management
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');

@@ -25,7 +25,7 @@ class UserController extends Controller
         /** @var User $authUser */
         $authUser = auth()->user();
 
-        if ($authUser->isAdmin()) {
+        if ($authUser->isAdmin() || $authUser->isSuperAdmin()) {
             $query->where('role', '!=', 'developer');
         }
 
@@ -39,9 +39,21 @@ class UserController extends Controller
                 'email' => $u->email,
                 'role' => $u->role,
                 'created_at' => $u->created_at->toISOString(),
+                'can_edit' => $authUser->can('update', $u),
+                'can_delete' => $authUser->can('delete', $u),
             ]);
 
-        return Inertia::render('ManageUsers', ['users' => $users]);
+        $assignableRoles = match (true) {
+            $authUser->isDeveloper() => ['user', 'administrator', 'superadmin', 'developer'],
+            $authUser->isSuperAdmin() => ['user', 'administrator'],
+            $authUser->isAdmin() => ['user'],
+            default => [],
+        };
+
+        return Inertia::render('ManageUsers', [
+            'users' => $users,
+            'assignable_roles' => $assignableRoles,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -54,11 +66,15 @@ class UserController extends Controller
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
-            'role' => ['required', 'in:user,administrator,developer'],
+            'role' => ['required', 'in:user,administrator,superadmin,developer'],
         ]);
 
         /** @var User $authUser */
         $authUser = auth()->user();
+
+        if ($authUser->isSuperAdmin() && ! in_array($validated['role'], ['user', 'administrator'])) {
+            return back()->with('error', 'Super Administrators can only create users with the Administrator or User role.');
+        }
 
         if ($authUser->isAdmin() && $validated['role'] !== 'user') {
             return back()->with('error', 'Administrators can only create users with the User role.');
@@ -80,8 +96,11 @@ class UserController extends Controller
         try {
             $this->authorize('update', $user);
         } catch (AuthorizationException $e) {
+            if ($authUser->isSuperAdmin() && ! ($user->isAdmin() || $user->isStaff())) {
+                return back()->with('error', 'Super Administrators cannot edit other super administrators or developers.');
+            }
             if ($authUser->isAdmin() && ! $user->isStaff()) {
-                return back()->with('error', 'Administrators cannot edit other administrators or developers.');
+                return back()->with('error', 'Administrators cannot edit other administrators, super administrators, or developers.');
             }
             throw $e;
         }
@@ -91,8 +110,12 @@ class UserController extends Controller
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'in:user,administrator,developer'],
+            'role' => ['required', 'in:user,administrator,superadmin,developer'],
         ]);
+
+        if ($authUser->isSuperAdmin() && ! in_array($validated['role'], ['user', 'administrator'])) {
+            return back()->with('error', 'Super Administrators can only assign the Administrator or User role.');
+        }
 
         if ($authUser->isAdmin() && $validated['role'] !== 'user') {
             return back()->with('error', 'Administrators can only assign the User role.');
@@ -126,8 +149,11 @@ class UserController extends Controller
             if ($user->id === $authUser->id) {
                 return back()->with('error', 'You cannot delete your own account.');
             }
+            if ($authUser->isSuperAdmin() && ! ($user->isAdmin() || $user->isStaff())) {
+                return back()->with('error', 'Super Administrators cannot delete other super administrators or developers.');
+            }
             if ($authUser->isAdmin() && ! $user->isStaff()) {
-                return back()->with('error', 'Administrators cannot delete other administrators or developers.');
+                return back()->with('error', 'Administrators cannot delete other administrators, super administrators, or developers.');
             }
             throw $e;
         }
