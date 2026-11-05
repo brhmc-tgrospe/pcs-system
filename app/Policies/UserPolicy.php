@@ -8,12 +8,12 @@ class UserPolicy
 {
     public function viewAny(User $authUser): bool
     {
-        return $authUser->isAdmin() || $authUser->isDeveloper();
+        return $authUser->isAdministrative() || $authUser->isDeveloper();
     }
 
     public function create(User $authUser): bool
     {
-        return $authUser->isAdmin() || $authUser->isDeveloper();
+        return $authUser->isAdministrative() || $authUser->isDeveloper();
     }
 
     public function update(User $authUser, User $targetUser): bool
@@ -22,8 +22,11 @@ class UserPolicy
             return true;
         }
 
+        if ($authUser->isSuperAdmin()) {
+            return $targetUser->isAdmin() || $targetUser->isStaff();
+        }
+
         if ($authUser->isAdmin()) {
-            // Admins can only manage Staff accounts, cannot edit other Admins or Developers
             return $targetUser->isStaff();
         }
 
@@ -33,11 +36,15 @@ class UserPolicy
     public function delete(User $authUser, User $targetUser): bool
     {
         if ($authUser->id === $targetUser->id) {
-            return false; // Prevent self-deletion
+            return false;
         }
 
         if ($authUser->isDeveloper()) {
             return true;
+        }
+
+        if ($authUser->isSuperAdmin()) {
+            return $targetUser->isAdmin() || $targetUser->isStaff();
         }
 
         if ($authUser->isAdmin()) {
