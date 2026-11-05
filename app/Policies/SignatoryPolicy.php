@@ -8,11 +8,11 @@ class SignatoryPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->isDeveloper();
+        return $user->isAdministrative() || $user->isDeveloper();
     }
 
     public function manage(User $user): bool
     {
-        return $user->isAdmin() || $user->isDeveloper();
+        return $user->isAdministrative() || $user->isDeveloper();
     }
 }

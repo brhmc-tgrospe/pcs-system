@@ -13,6 +13,8 @@ class BidderPolicyTest extends TestCase
 
     private User $developer;
 
+    private User $superadmin;
+
     private User $admin;
 
     private User $staff;
@@ -24,6 +26,7 @@ class BidderPolicyTest extends TestCase
         parent::setUp();
         $this->policy = new BidderPolicy;
         $this->developer = new User(['role' => 'developer']);
+        $this->superadmin = new User(['role' => 'superadmin']);
         $this->admin = new User(['role' => 'administrator']);
         $this->staff = new User(['role' => 'user']);
         $this->bidder = new Bidder;
@@ -33,10 +36,12 @@ class BidderPolicyTest extends TestCase
     {
         $this->assertTrue($this->policy->viewAny($this->staff));
         $this->assertTrue($this->policy->viewAny($this->admin));
+        $this->assertTrue($this->policy->viewAny($this->superadmin));
         $this->assertTrue($this->policy->viewAny($this->developer));
 
         $this->assertTrue($this->policy->view($this->staff, $this->bidder));
         $this->assertTrue($this->policy->view($this->admin, $this->bidder));
+        $this->assertTrue($this->policy->view($this->superadmin, $this->bidder));
         $this->assertTrue($this->policy->view($this->developer, $this->bidder));
     }
 
@@ -59,5 +64,13 @@ class BidderPolicyTest extends TestCase
         $this->assertTrue($this->policy->update($this->developer, $this->bidder));
         $this->assertTrue($this->policy->delete($this->developer, $this->bidder));
         $this->assertTrue($this->policy->restore($this->developer, $this->bidder));
+    }
+
+    public function test_superadmin_can_manage_bidders(): void
+    {
+        $this->assertTrue($this->policy->create($this->superadmin));
+        $this->assertTrue($this->policy->update($this->superadmin, $this->bidder));
+        $this->assertTrue($this->policy->delete($this->superadmin, $this->bidder));
+        $this->assertTrue($this->policy->restore($this->superadmin, $this->bidder));
     }
 }

@@ -13,6 +13,8 @@ class CategoryPolicyTest extends TestCase
 
     private User $developer;
 
+    private User $superadmin;
+
     private User $admin;
 
     private User $staff;
@@ -24,6 +26,7 @@ class CategoryPolicyTest extends TestCase
         parent::setUp();
         $this->policy = new CategoryPolicy;
         $this->developer = new User(['role' => 'developer']);
+        $this->superadmin = new User(['role' => 'superadmin']);
         $this->admin = new User(['role' => 'administrator']);
         $this->staff = new User(['role' => 'user']);
         $this->category = new Category;
@@ -33,10 +36,12 @@ class CategoryPolicyTest extends TestCase
     {
         $this->assertTrue($this->policy->viewAny($this->staff));
         $this->assertTrue($this->policy->viewAny($this->admin));
+        $this->assertTrue($this->policy->viewAny($this->superadmin));
         $this->assertTrue($this->policy->viewAny($this->developer));
 
         $this->assertTrue($this->policy->view($this->staff, $this->category));
         $this->assertTrue($this->policy->view($this->admin, $this->category));
+        $this->assertTrue($this->policy->view($this->superadmin, $this->category));
         $this->assertTrue($this->policy->view($this->developer, $this->category));
     }
 
@@ -62,6 +67,18 @@ class CategoryPolicyTest extends TestCase
         $this->assertTrue($this->policy->restoreAny($this->admin));
         $this->assertFalse($this->policy->forceDelete($this->admin, $this->category));
         $this->assertFalse($this->policy->forceDeleteAny($this->admin));
+    }
+
+    public function test_superadmin_can_manage_categories_and_force_delete(): void
+    {
+        $this->assertTrue($this->policy->create($this->superadmin));
+        $this->assertTrue($this->policy->update($this->superadmin, $this->category));
+        $this->assertTrue($this->policy->delete($this->superadmin, $this->category));
+        $this->assertTrue($this->policy->deleteAny($this->superadmin));
+        $this->assertTrue($this->policy->restore($this->superadmin, $this->category));
+        $this->assertTrue($this->policy->restoreAny($this->superadmin));
+        $this->assertTrue($this->policy->forceDelete($this->superadmin, $this->category));
+        $this->assertTrue($this->policy->forceDeleteAny($this->superadmin));
     }
 
     public function test_developer_can_perform_all_actions_including_force_delete(): void

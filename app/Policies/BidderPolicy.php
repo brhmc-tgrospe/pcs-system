@@ -19,21 +19,21 @@ class BidderPolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isDeveloper();
+        return $user->isAdministrative() || $user->isDeveloper();
     }
 
     public function update(User $user, Bidder $bidder): bool
     {
-        return $user->isAdmin() || $user->isDeveloper();
+        return $user->isAdministrative() || $user->isDeveloper();
     }
 
     public function delete(User $user, Bidder $bidder): bool
     {
-        return $user->isAdmin() || $user->isDeveloper();
+        return $user->isAdministrative() || $user->isDeveloper();
     }
 
     public function restore(User $user, Bidder $bidder): bool
     {
-        return $user->isAdmin() || $user->isDeveloper();
+        return $user->isAdministrative() || $user->isDeveloper();
     }
 }
