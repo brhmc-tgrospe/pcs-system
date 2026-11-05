@@ -7,12 +7,7 @@ import ImpersonationBanner from '../Components/ImpersonationBanner';
 import Toast from '../Components/Toast';
 import ConfirmationModal from '../Components/ConfirmationModal';
 import ImpersonateModal from '../Components/ImpersonateModal';
-import { AuthUser, UserSummary } from '../types';
-
-interface ManageUsersProps extends Record<string, unknown> {
-  users: UserSummary[];
-  auth: { user: AuthUser };
-}
+import { AuthUser, UserSummary, UserRole, ManageUsersProps } from '../types';
 
 type UserFormData = {
   username: string;
@@ -20,11 +15,11 @@ type UserFormData = {
   last_name: string;
   email: string;
   password?: string;
-  role: 'user' | 'administrator' | 'developer';
+  role: UserRole;
 };
 
 export default function ManageUsers() {
-  const { users, auth } = usePage<ManageUsersProps>().props;
+  const { users, assignable_roles = ['user'], auth } = usePage<ManageUsersProps>().props;
   const user = auth.user;
   const isDeveloper = user.role === 'developer';
   const canImpersonate = Boolean(user.can?.impersonate);
@@ -37,7 +32,7 @@ export default function ManageUsers() {
   const [editingUser, setEditingUser] = useState<UserSummary | null>(null);
   const [userToDelete, setUserToDelete] = useState<UserSummary | null>(null);
 
-  const [roleFilter, setRoleFilter] = useState<'all' | 'user' | 'administrator' | 'developer'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'user' | 'administrator' | 'superadmin' | 'developer'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
 
@@ -54,13 +49,13 @@ export default function ManageUsers() {
     setCurrentPage(1);
   }, [searchTerm, roleFilter, perPage]);
 
-  const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm<UserFormData>({
+  const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<UserFormData>({
     username: '',
     first_name: '',
     last_name: '',
     email: '',
     password: '',
-    role: 'user',
+    role: (assignable_roles[0] as UserRole) || 'user',
   });
 
   const filteredUsers = users.filter(u => {
@@ -83,26 +78,26 @@ export default function ManageUsers() {
       last_name: '',
       email: '',
       password: '',
-      role: 'user',
+      role: (assignable_roles[0] as UserRole) || 'user',
     });
     setEditingUser(null);
     setIsModalOpen(true);
   };
 
   const openEditModal = (u: UserSummary) => {
-    if (!isDeveloper && (u.role === 'administrator' || u.role === 'developer')) {
+    if (u.can_edit === false) {
       return;
     }
     clearErrors();
     const parts = u.full_name.split(' ');
-    const first_name = parts[0];
-    const last_name = parts.slice(1).join(' ');
+    const first_name = u.first_name || parts[0];
+    const last_name = u.last_name || parts.slice(1).join(' ');
     setData({
       username: u.username,
       first_name,
       last_name,
       email: u.email,
-      role: !isDeveloper ? 'user' : u.role,
+      role: u.role,
       password: '',
     });
     setEditingUser(u);
@@ -111,10 +106,6 @@ export default function ManageUsers() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    transform((formData) => ({
-      ...formData,
-      role: !isDeveloper ? 'user' : formData.role,
-    }));
     if (editingUser) {
       put(`/users/${editingUser.id}`, {
         preserveScroll: true,
@@ -129,11 +120,11 @@ export default function ManageUsers() {
   };
 
   const handleDelete = (u: UserSummary) => {
-    if (u.id === user.id) {
-      alert("You cannot delete yourself.");
+    if (u.can_delete === false) {
       return;
     }
-    if (!isDeveloper && (u.role === 'administrator' || u.role === 'developer')) {
+    if (u.id === user.id) {
+      alert("You cannot delete yourself.");
       return;
     }
     setUserToDelete(u);
@@ -142,7 +133,7 @@ export default function ManageUsers() {
 
   const confirmDelete = () => {
     if (userToDelete) {
-      if (!isDeveloper && (userToDelete.role === 'administrator' || userToDelete.role === 'developer')) {
+      if (userToDelete.can_delete === false) {
         setIsDeleteModalOpen(false);
         return;
       }
@@ -157,13 +148,16 @@ export default function ManageUsers() {
     if (role === 'developer') {
       return 'bg-fuchsia-50 dark:bg-fuchsia-950/40 text-fuchsia-700 dark:text-fuchsia-300 border-fuchsia-200/60 dark:border-fuchsia-800/60';
     }
+    if (role === 'superadmin') {
+      return 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/60';
+    }
     if (role === 'administrator') {
       return 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60';
     }
     return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/60';
   };
 
-  const totalAdmins = users.filter(u => u.role === 'administrator' || u.role === 'developer').length;
+  const totalAdmins = users.filter(u => u.role === 'administrator' || u.role === 'superadmin' || u.role === 'developer').length;
   const totalStandard = users.filter(u => u.role === 'user').length;
 
   return (
@@ -268,6 +262,7 @@ export default function ManageUsers() {
                       <option value="all">All Roles</option>
                       <option value="user">User</option>
                       <option value="administrator">Administrator</option>
+                      <option value="superadmin">Super Administrator</option>
                       {user.role === 'developer' && <option value="developer">Developer</option>}
                     </select>
                   </div>
@@ -339,7 +334,7 @@ export default function ManageUsers() {
                                 u.role
                               )}`}
                             >
-                              {u.role}
+                              {u.role === 'superadmin' ? 'Super Administrator' : u.role}
                             </span>
                           </td>
                           <td className="py-2.5 px-3.5 text-right whitespace-nowrap">
@@ -354,27 +349,31 @@ export default function ManageUsers() {
                                   <UserCheck className="w-3.5 h-3.5" />
                                 </button>
                               )}
-                              {!isDeveloper && (u.role === 'administrator' || u.role === 'developer') ? (
+                              {u.can_edit === false && u.can_delete === false ? (
                                 <span className="text-xs text-slate-400 italic">Restricted</span>
                               ) : (
                                 <>
-                                  <button
-                                    onClick={() => openEditModal(u)}
-                                    className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors cursor-pointer"
-                                    title="Edit User"
-                                    aria-label={`Edit ${u.username}`}
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(u)}
-                                    disabled={u.id === user.id}
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                                    title="Delete User"
-                                    aria-label={`Delete ${u.username}`}
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                  {u.can_edit && (
+                                    <button
+                                      onClick={() => openEditModal(u)}
+                                      className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors cursor-pointer"
+                                      title="Edit User"
+                                      aria-label={`Edit ${u.username}`}
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                  {u.can_delete && (
+                                    <button
+                                      onClick={() => handleDelete(u)}
+                                      disabled={u.id === user.id}
+                                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                      title="Delete User"
+                                      aria-label={`Delete ${u.username}`}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
                                 </>
                               )}
                             </div>
@@ -520,19 +519,17 @@ export default function ManageUsers() {
                     <select
                       required
                       value={data.role}
-                      onChange={(e) => setData('role', e.target.value as UserFormData['role'])}
-                      disabled={!isDeveloper}
+                      onChange={(e) => setData('role', e.target.value as UserRole)}
+                      disabled={assignable_roles.length <= 1}
                       className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 capitalize dark:text-white disabled:opacity-60 disabled:bg-slate-100 dark:disabled:bg-slate-800 ${
                         errors.role ? 'border-red-400' : 'border-slate-200 dark:border-slate-600'
                       }`}
                     >
-                      <option value="user">User</option>
-                      {isDeveloper && (
-                        <>
-                          <option value="administrator">Administrator</option>
-                          <option value="developer">Developer</option>
-                        </>
-                      )}
+                      {assignable_roles.map((r) => (
+                        <option key={r} value={r}>
+                          {r === 'superadmin' ? 'Super Administrator' : r === 'administrator' ? 'Administrator' : r === 'developer' ? 'Developer' : 'User'}
+                        </option>
+                      ))}
                     </select>
                     {errors.role && <p className="mt-1 text-xs text-red-600">{errors.role}</p>}
                   </div>

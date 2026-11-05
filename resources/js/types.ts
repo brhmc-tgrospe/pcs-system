@@ -3,7 +3,7 @@
 // These match Laravel's snake_case JSON serialization exactly.
 // ============================================================
 
-export type UserRole = 'user' | 'administrator' | 'developer';
+export type UserRole = 'user' | 'administrator' | 'superadmin' | 'developer';
 
 export interface UserPermissions {
   manage_items: boolean;
@@ -97,9 +97,19 @@ export interface ActivityLogEntry {
 export interface UserSummary {
   id: number;
   username: string;
+  first_name?: string;
+  last_name?: string;
   full_name: string;
   email: string;
   role: UserRole;
+  can_edit?: boolean;
+  can_delete?: boolean;
+}
+
+export interface ManageUsersProps extends Record<string, unknown> {
+  users: UserSummary[];
+  assignable_roles?: UserRole[];
+  auth: { user: AuthUser };
 }
 
 export interface Signatory {

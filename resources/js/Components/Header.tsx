@@ -100,7 +100,9 @@ export default function Header({ onOpenMobile, user, users }: HeaderProps) {
               <div className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {user.full_name}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 capitalize">{user.role}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                {user.role === 'superadmin' ? 'Super Administrator' : user.role}
+              </div>
             </div>
             <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-700 dark:text-blue-300 font-bold border-2 border-white dark:border-slate-800 shadow-xs">
               {user.first_name[0]}{user.last_name[0]}
@@ -110,7 +112,9 @@ export default function Header({ onOpenMobile, user, users }: HeaderProps) {
             <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 overflow-hidden py-1 z-50">
               <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 sm:hidden">
                 <div className="text-sm font-bold text-slate-900 dark:text-white">{user.full_name}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 capitalize">{user.role}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                  {user.role === 'superadmin' ? 'Super Administrator' : user.role}
+                </div>
               </div>
               <button
                 onClick={() => router.get('/profile')}
