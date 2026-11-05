@@ -50,13 +50,43 @@ class ActivityLog extends Model
             return $query;
         }
 
+        if ($user->isSuperAdmin()) {
+            return $query
+                ->whereNotIn('action', ['impersonation_started', 'impersonation_ended'])
+                ->whereDoesntHave('user', function (Builder $uq) {
+                    $uq->where('role', 'developer');
+                })
+                ->where(function (Builder $q) {
+                    $q->whereNull('user_id')
+                        ->orWhereHas('user', function (Builder $uq) {
+                            $uq->whereIn('role', ['superadmin', 'administrator', 'user']);
+                        });
+                })
+                ->where(function (Builder $q) {
+                    $q->whereNotIn('subject_type', ['User', 'App\\Models\\User', 'user'])
+                        ->orWhereNull('subject_type')
+                        ->orWhereDoesntHave('subjectUser', function (Builder $suq) {
+                            $suq->where('role', 'developer');
+                        });
+                })
+                ->where(function (Builder $q) {
+                    $devUsernames = User::where('role', 'developer')->pluck('username')->filter()->all();
+                    $q->where('description', 'not like', '%Developer %')
+                        ->where('description', 'not like', "%Developer '%");
+                    foreach ($devUsernames as $devUsername) {
+                        $q->where('description', 'not like', "%'{$devUsername}'%")
+                            ->where('description', 'not like', "%User {$devUsername} %");
+                    }
+                });
+        }
+
         if ($user->isAdmin()) {
             return $query
                 // Never show impersonation events to administrators
                 ->whereNotIn('action', ['impersonation_started', 'impersonation_ended'])
-                // Exclude any log where the actor is a developer
+                // Exclude any log where the actor is a developer or superadmin
                 ->whereDoesntHave('user', function (Builder $uq) {
-                    $uq->where('role', 'developer');
+                    $uq->whereIn('role', ['developer', 'superadmin']);
                 })
                 // Only allow logs where user is admin or staff, or system logs (null user_id)
                 ->where(function (Builder $q) {
@@ -65,22 +95,24 @@ class ActivityLog extends Model
                             $uq->whereIn('role', ['administrator', 'user']);
                         });
                 })
-                // Exclude logs where the subject is a developer (regardless of subject_type casing/class)
+                // Exclude logs where the subject is a developer or superadmin (regardless of subject_type casing/class)
                 ->where(function (Builder $q) {
                     $q->whereNotIn('subject_type', ['User', 'App\\Models\\User', 'user'])
                         ->orWhereNull('subject_type')
                         ->orWhereDoesntHave('subjectUser', function (Builder $suq) {
-                            $suq->where('role', 'developer');
+                            $suq->whereIn('role', ['developer', 'superadmin']);
                         });
                 })
-                // Exclude any log whose description mentions a developer or a developer username
+                // Exclude any log whose description mentions developer or superadmin keywords / usernames
                 ->where(function (Builder $q) {
-                    $devUsernames = User::where('role', 'developer')->pluck('username')->filter()->all();
+                    $excludedUsernames = User::whereIn('role', ['developer', 'superadmin'])->pluck('username')->filter()->all();
                     $q->where('description', 'not like', '%Developer %')
-                        ->where('description', 'not like', "%Developer '%");
-                    foreach ($devUsernames as $devUsername) {
-                        $q->where('description', 'not like', "%'{$devUsername}'%")
-                            ->where('description', 'not like', "%User {$devUsername} %");
+                        ->where('description', 'not like', "%Developer '%")
+                        ->where('description', 'not like', '%Super Administrator %')
+                        ->where('description', 'not like', "%Super Administrator '%");
+                    foreach ($excludedUsernames as $username) {
+                        $q->where('description', 'not like', "%'{$username}'%")
+                            ->where('description', 'not like', "%User {$username} %");
                     }
                 });
         }

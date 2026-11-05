@@ -8,7 +8,7 @@ class ActivityLogPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->isDeveloper();
+        return $user->isAdministrative() || $user->isDeveloper();
     }
 
     public function prune(User $user): bool

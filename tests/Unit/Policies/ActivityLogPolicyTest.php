@@ -12,6 +12,8 @@ class ActivityLogPolicyTest extends TestCase
 
     private User $developer;
 
+    private User $superadmin;
+
     private User $admin;
 
     private User $staff;
@@ -21,6 +23,7 @@ class ActivityLogPolicyTest extends TestCase
         parent::setUp();
         $this->policy = new ActivityLogPolicy;
         $this->developer = new User(['role' => 'developer']);
+        $this->superadmin = new User(['role' => 'superadmin']);
         $this->admin = new User(['role' => 'administrator']);
         $this->staff = new User(['role' => 'user']);
     }
@@ -34,6 +37,12 @@ class ActivityLogPolicyTest extends TestCase
     {
         $this->assertTrue($this->policy->viewAny($this->admin));
         $this->assertFalse($this->policy->prune($this->admin));
+    }
+
+    public function test_superadmin_can_view_activity_logs_but_cannot_prune(): void
+    {
+        $this->assertTrue($this->policy->viewAny($this->superadmin));
+        $this->assertFalse($this->policy->prune($this->superadmin));
     }
 
     public function test_developer_can_view_and_prune_activity_logs(): void
