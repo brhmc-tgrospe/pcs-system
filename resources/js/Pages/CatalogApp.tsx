@@ -15,7 +15,9 @@ import { CatalogAppProps, Item, Category } from '../types';
 type View = 'dashboard' | 'catalog' | 'manage_items' | 'manage_categories' | 'print_report';
 
 export default function CatalogApp() {
-  const { items, categories, bidders, recentLogs, users, auth } = usePage<CatalogAppProps & Record<string, unknown>>().props;
+  const page = usePage<CatalogAppProps & Record<string, unknown>>();
+  const { items, categories, bidders, recentLogs, users, auth } = page.props;
+  const url = page.url;
   const user = auth.user;
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -24,7 +26,8 @@ export default function CatalogApp() {
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
 
   React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const searchString = url && url.includes('?') ? url.substring(url.indexOf('?')) : window.location.search;
+    const params = new URLSearchParams(searchString);
     const viewItemStr = params.get('view_item');
     const categoryStr = params.get('category');
     const viewStr = params.get('view');
@@ -55,7 +58,7 @@ export default function CatalogApp() {
     if (shouldCleanUrl) {
       window.history.replaceState({}, '', '/catalog');
     }
-  }, [items]);
+  }, [items, url]);
 
   const navigate = (view: string) => {
     setCurrentView(view as View);

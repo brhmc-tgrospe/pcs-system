@@ -175,7 +175,7 @@ export default function ManageUsers() {
         user={user}
         currentView="users"
         onNavigate={(view) => {
-          if (view !== 'users') router.visit('/catalog');
+          router.visit(view === 'dashboard' ? '/catalog' : `/catalog?view=${view}`);
         }}
       />
 

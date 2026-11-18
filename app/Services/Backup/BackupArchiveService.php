@@ -2,91 +2,135 @@
 
 namespace App\Services\Backup;
 
-use App\Services\Backup\Contracts\DatabaseDumperInterface;
-use Carbon\Carbon;
+use App\Models\BackupHistory;
+use App\Models\User;
+use Exception;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
+use Symfony\Component\Process\Process;
 use ZipArchive;
 
 class BackupArchiveService
 {
     public const MAX_RETAINED_BACKUPS = 4;
 
-    public const TIMEZONE = 'Asia/Manila';
-
-    public const FILENAME_PATTERN = '/^(?:PCS|backup)_\d{4}-\d{2}-\d{2}_\d{2}-?\d{2}-?\d{2}\.zip$/';
-
     public function __construct(
-        protected DatabaseDumperInterface $dumper,
-        protected SystemHealthCollector $healthCollector
+        protected DatabaseBackupService $databaseService,
+        protected SystemHealthService $healthService
     ) {}
 
     /**
-     * Create a new backup archive, packaging MySQL dump and system health JSON.
-     *
-     * @param  (callable(int, string): void)|null  $progressCallback
-     * @return string Generated filename (e.g. PCS_2026-10-14_130000.zip)
-     *
-     * @throws RuntimeException
+     * Orchestrate complete backup: health snapshot, db dump, zip bundling, and retention pruning.
      */
-    public function createBackup(?callable $progressCallback = null): string
+    public function createBackup(?int $triggeredByUserId = null): BackupHistory
     {
-        $this->notify($progressCallback, 10, 'Initializing backup environment...');
+        $backupTime = now()->setTimezone('Asia/Manila');
+        $date = $backupTime->format('Y-m-d');
+        $time = $backupTime->format('His');
+        $filename = "PCS_{$date}_{$time}.zip";
+        $relativePath = "backups/{$filename}";
 
-        $backupsDir = storage_path('app/backups');
-        if (! File::exists($backupsDir)) {
-            File::makeDirectory($backupsDir, 0755, true);
+        // Create running history entry
+        $history = BackupHistory::create([
+            'filename' => $filename,
+            'file_path' => $relativePath,
+            'status' => 'running',
+            'triggered_by' => $triggeredByUserId,
+        ]);
+
+        $tempDir = storage_path("app/temp/backup_PCS_{$date}_{$time}");
+        $backupDir = storage_path('app/backups');
+
+        if (! File::exists($backupDir)) {
+            File::makeDirectory($backupDir, 0755, true);
         }
 
-        $timestamp = Carbon::now(self::TIMEZONE)->format('Y-m-d_His');
-        $tempDir = $backupsDir.DIRECTORY_SEPARATOR.'tmp_'.uniqid('', true);
-        File::makeDirectory($tempDir, 0755, true);
-
-        $tempSqlGz = $tempDir.DIRECTORY_SEPARATOR.'database.sql.gz';
-        $tempHealthJson = $tempDir.DIRECTORY_SEPARATOR.'system_health.json';
-        $finalZipName = "PCS_{$timestamp}.zip";
-        $finalZipPath = $backupsDir.DIRECTORY_SEPARATOR.$finalZipName;
-
         try {
-            // Step 1: Dump database stream
-            $this->notify($progressCallback, 30, 'Streaming database dump (zero-locking)...');
-            $this->dumper->dump($tempSqlGz);
-
-            // Step 2: Collect system health diagnostics
-            $this->notify($progressCallback, 70, 'Collecting system health telemetry...');
-            $healthData = $this->healthCollector->collect();
-            file_put_contents($tempHealthJson, json_encode($healthData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-
-            // Step 3: Bundle into Zip archive
-            $this->notify($progressCallback, 85, 'Packaging and compressing archive...');
-            $zip = new ZipArchive;
-            $zipStatus = $zip->open($finalZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-            if ($zipStatus !== true) {
-                throw new RuntimeException("Failed to create ZIP archive at: {$finalZipPath} (code {$zipStatus})");
+            // 1. Pre-flight check: ensure enough disk space (> 500MB free)
+            $freeSpace = @disk_free_space(base_path()) ?: 0;
+            if ($freeSpace < (500 * 1024 * 1024)) {
+                throw new RuntimeException('Insufficient server disk space. Less than 500MB free on drive.');
             }
 
-            $zip->addFile($tempSqlGz, 'database.sql.gz');
-            $zip->addFile($tempHealthJson, 'system_health.json');
-            $zip->close();
+            // 2. Setup temporary folders
+            $dbTempDir = "{$tempDir}/database";
+            $healthTempDir = "{$tempDir}/system_health";
+            File::makeDirectory($dbTempDir, 0755, true);
+            File::makeDirectory($healthTempDir, 0755, true);
 
-            // Step 4: Prune oldest archives to strictly maintain max 4
-            $this->notify($progressCallback, 95, 'Pruning old backups to maintain retention cap...');
-            $this->pruneOldBackups();
+            // 3. Gather System Health
+            $healthSnapshot = $this->healthService->getHealthSnapshot();
+            $healthMarkdown = $this->healthService->generateMarkdownReport($healthSnapshot);
 
-            $this->notify($progressCallback, 100, 'Backup generated successfully.');
+            File::put("{$healthTempDir}/health_summary.json", json_encode($healthSnapshot, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            File::put("{$healthTempDir}/health_summary.md", $healthMarkdown);
 
-            Log::info("System backup created successfully: {$finalZipName}");
+            // 4. Dump Database
+            $sqlDumpPath = "{$dbTempDir}/database_dump.sql";
+            $dumpResult = $this->databaseService->dumpDatabase($sqlDumpPath);
 
-            return $finalZipName;
-        } catch (\Throwable $e) {
-            if (File::exists($finalZipPath)) {
-                @unlink($finalZipPath);
-            }
-            Log::error('System backup generation failed: '.$e->getMessage(), [
-                'exception' => $e,
+            // 5. Generate Manifest
+            $initiator = $triggeredByUserId ? User::find($triggeredByUserId) : null;
+            $manifest = [
+                'app_name' => config('app.name', 'BRHMC - PCS'),
+                'backup_version' => '1.0',
+                'created_at' => $backupTime->toIso8601String(),
+                'timezone' => 'UTC+8 (Asia/Manila)',
+                'triggered_by' => $initiator ? [
+                    'id' => $initiator->id,
+                    'name' => trim(($initiator->first_name ?? '').' '.($initiator->last_name ?? '')) ?: $initiator->username,
+                    'email' => $initiator->email,
+                ] : 'Automated Scheduler',
+                'database' => [
+                    'dump_file' => 'database/database_dump.sql',
+                    'dump_size_bytes' => $dumpResult['file_size'],
+                    'dump_duration_seconds' => $dumpResult['duration_seconds'],
+                    'tool_used' => $dumpResult['tool_used'],
+                    'sha256_checksum' => hash_file('sha256', $sqlDumpPath),
+                    'total_tables' => $healthSnapshot['database']['total_tables'] ?? 0,
+                    'total_rows' => $healthSnapshot['database']['total_rows'] ?? 0,
+                ],
+                'system_health' => [
+                    'server_os' => $healthSnapshot['server']['os_description'] ?? 'Unknown',
+                    'php_version' => $healthSnapshot['server']['php_version'] ?? PHP_VERSION,
+                    'disk_free' => $healthSnapshot['storage']['free_formatted'] ?? 'Unknown',
+                ],
+            ];
+
+            File::put("{$tempDir}/manifest.json", json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+            // 6. Compress into .zip archive
+            $zipDestination = storage_path("app/{$relativePath}");
+            $this->createZipArchive($tempDir, $zipDestination);
+
+            // 7. Update history record to completed
+            $history->update([
+                'status' => 'completed',
+                'file_size' => filesize($zipDestination),
+                'health_summary' => [
+                    'database_size' => $healthSnapshot['database']['total_size_formatted'] ?? '0 B',
+                    'total_tables' => $healthSnapshot['database']['total_tables'] ?? 0,
+                    'total_rows' => $healthSnapshot['database']['total_rows'] ?? 0,
+                    'free_disk' => $healthSnapshot['storage']['free_formatted'] ?? '0 B',
+                    'used_disk_pct' => $healthSnapshot['storage']['used_percentage'] ?? 0,
+                ],
             ]);
-            throw new RuntimeException('Backup failed: '.$e->getMessage(), 0, $e);
+
+            // 8. Enforce strict 4-backup retention limit
+            $this->enforceRetention();
+
+            return $history->fresh();
+
+        } catch (Exception $e) {
+            $history->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+            ]);
+
+            throw $e;
         } finally {
             // Clean up temporary directory
             if (File::isDirectory($tempDir)) {
@@ -96,124 +140,106 @@ class BackupArchiveService
     }
 
     /**
-     * Enforce strict retention: retain only the latest 4 backups and delete older ones.
+     * Compress contents of directory into a ZIP file.
      */
-    public function pruneOldBackups(): int
+    protected function createZipArchive(string $sourceDir, string $destinationZip): void
     {
-        $backups = $this->listBackups();
-        $prunedCount = 0;
+        if (class_exists('ZipArchive')) {
+            $zip = new ZipArchive();
+            if ($zip->open($destinationZip, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                throw new RuntimeException("Cannot open or create zip archive at {$destinationZip}");
+            }
 
-        if (count($backups) > self::MAX_RETAINED_BACKUPS) {
-            // Sliced from index 4 onwards are the excess oldest files
-            $excess = array_slice($backups, self::MAX_RETAINED_BACKUPS);
-            foreach ($excess as $backup) {
-                $path = storage_path('app/backups/'.$backup['filename']);
-                if (file_exists($path) && @unlink($path)) {
-                    $prunedCount++;
-                    Log::info('Pruned old backup to maintain retention cap of '.self::MAX_RETAINED_BACKUPS.": {$backup['filename']}");
+            $files = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($sourceDir, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::LEAVES_ONLY
+            );
+
+            foreach ($files as $file) {
+                if (! $file->isDir()) {
+                    $filePath = $file->getRealPath();
+                    $relativePath = substr($filePath, strlen($sourceDir) + 1);
+                    // Standardize slashes for cross-platform archive compatibility
+                    $zipPath = str_replace('\\', '/', $relativePath);
+                    $zip->addFile($filePath, $zipPath);
                 }
             }
+
+            $zip->close();
+
+            return;
+        }
+
+        // Fallback to PowerShell Compress-Archive on Windows
+        if (PHP_OS_FAMILY === 'Windows') {
+            $escapedSource = escapeshellarg($sourceDir.'\\*');
+            $escapedDest = escapeshellarg($destinationZip);
+            $cmd = "powershell -NoProfile -Command \"Compress-Archive -Path {$escapedSource} -DestinationPath {$escapedDest} -Force\"";
+            $process = Process::fromShellCommandline($cmd);
+            $process->setTimeout(600);
+            $process->run();
+
+            if (! $process->isSuccessful() || ! file_exists($destinationZip)) {
+                throw new RuntimeException('PowerShell zip compression failed: '.$process->getErrorOutput());
+            }
+
+            return;
+        }
+
+        throw new RuntimeException('No zip compression tool available on server.');
+    }
+
+    /**
+     * Enforce strict 4-backup retention.
+     * Keeps the 4 most recent completed backups and deletes older physical files & records.
+     */
+    public function enforceRetention(): int
+    {
+        $completedBackups = BackupHistory::where('status', 'completed')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        if ($completedBackups->count() <= self::MAX_RETAINED_BACKUPS) {
+            return 0;
+        }
+
+        $toPrune = $completedBackups->slice(self::MAX_RETAINED_BACKUPS);
+        $prunedCount = 0;
+
+        foreach ($toPrune as $oldBackup) {
+            // Delete file from disk
+            if (Storage::exists($oldBackup->file_path)) {
+                Storage::delete($oldBackup->file_path);
+            } else {
+                $fullPath = storage_path("app/{$oldBackup->file_path}");
+                if (file_exists($fullPath)) {
+                    @unlink($fullPath);
+                }
+            }
+
+            // Remove database history record
+            $oldBackup->delete();
+            $prunedCount++;
         }
 
         return $prunedCount;
     }
 
     /**
-     * List all retained backup archives sorted descending by creation time.
-     *
-     * @return array<int, array{filename: string, size_bytes: int, size_formatted: string, created_at: string, created_at_human: string}>
+     * Manually delete a backup file and its record.
      */
-    public function listBackups(): array
+    public function deleteBackup(BackupHistory $history): bool
     {
-        $backupsDir = storage_path('app/backups');
-        if (! File::exists($backupsDir)) {
-            return [];
-        }
-
-        $files = File::files($backupsDir);
-        $backups = [];
-
-        foreach ($files as $file) {
-            $filename = $file->getFilename();
-            if (preg_match(self::FILENAME_PATTERN, $filename)) {
-                $sizeBytes = $file->getSize();
-
-                if (preg_match('/^(?:PCS|backup)_(\d{4}-\d{2}-\d{2})_(\d{2})-?(\d{2})-?(\d{2})\.zip$/', $filename, $matches)) {
-                    $dateStr = $matches[1].' '.$matches[2].':'.$matches[3].':'.$matches[4];
-                    $carbon = Carbon::createFromFormat('Y-m-d H:i:s', $dateStr, self::TIMEZONE);
-                } else {
-                    $carbon = Carbon::createFromTimestamp($file->getMTime(), self::TIMEZONE);
-                }
-
-                $backups[] = [
-                    'filename' => $filename,
-                    'size_bytes' => $sizeBytes,
-                    'size_formatted' => $this->formatBytes($sizeBytes),
-                    'created_at' => $carbon->toIso8601String(),
-                    'created_at_formatted' => $carbon->format('M d, Y h:i A').' (UTC+8)',
-                    'created_at_human' => $carbon->diffForHumans(),
-                    '_timestamp' => $carbon->timestamp,
-                ];
+        if (Storage::exists($history->file_path)) {
+            Storage::delete($history->file_path);
+        } else {
+            $fullPath = storage_path("app/{$history->file_path}");
+            if (file_exists($fullPath)) {
+                @unlink($fullPath);
             }
         }
 
-        // Sort descending (newest first)
-        usort($backups, fn ($a, $b) => $b['_timestamp'] <=> $a['_timestamp']);
-
-        // Remove sorting helper key
-        return array_map(function ($item) {
-            unset($item['_timestamp']);
-
-            return $item;
-        }, $backups);
-    }
-
-    /**
-     * Validate filename and delete the specified backup archive.
-     */
-    public function deleteBackup(string $filename): bool
-    {
-        if (! preg_match(self::FILENAME_PATTERN, $filename)) {
-            throw new RuntimeException('Invalid backup filename format.');
-        }
-
-        $path = storage_path('app/backups/'.$filename);
-        if (! file_exists($path)) {
-            return false;
-        }
-
-        return @unlink($path);
-    }
-
-    /**
-     * Get validated absolute path for safe download streaming.
-     */
-    public function getBackupPath(string $filename): ?string
-    {
-        if (! preg_match(self::FILENAME_PATTERN, $filename)) {
-            return null;
-        }
-
-        $path = storage_path('app/backups/'.$filename);
-
-        return file_exists($path) ? $path : null;
-    }
-
-    protected function notify(?callable $callback, int $percent, string $message): void
-    {
-        if ($callback !== null) {
-            $callback($percent, $message);
-        }
-    }
-
-    protected function formatBytes(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
-        $bytes /= pow(1024, $pow);
-
-        return round($bytes, 2).' '.$units[$pow];
+        return $history->delete();
     }
 }

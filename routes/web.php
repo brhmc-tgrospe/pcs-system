@@ -5,15 +5,16 @@ use App\Http\Controllers\BidderController;
 use App\Http\Controllers\BidderImportController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\DeveloperBackupController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ItemImportController;
 use App\Http\Controllers\PrintReportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SavedReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SignatoryController;
+use App\Http\Controllers\SystemHealthController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -86,18 +87,32 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/impersonate/{user}', [ImpersonationController::class, 'impersonate'])->name('impersonate.start');
 
         // Developer Backup & System Health Management
-        Route::get('/system-health', [DeveloperBackupController::class, 'page'])->name('system-health');
-        Route::get('/developer/backups', [DeveloperBackupController::class, 'index'])->name('developer.backups.index');
-        Route::post('/developer/backups/trigger', [DeveloperBackupController::class, 'trigger'])->name('developer.backups.trigger');
-        Route::get('/developer/backups/status', [DeveloperBackupController::class, 'status'])->name('developer.backups.status');
-        Route::get('/developer/backups/{filename}/download', [DeveloperBackupController::class, 'download'])->name('developer.backups.download');
-        Route::delete('/developer/backups/{filename}', [DeveloperBackupController::class, 'destroy'])->name('developer.backups.destroy');
-        Route::put('/developer/backups/schedule', [DeveloperBackupController::class, 'updateSchedule'])->name('developer.backups.schedule.update');
+        Route::prefix('system-health')->name('system-health.')->group(function () {
+            Route::get('/', [SystemHealthController::class, 'index'])->name('index');
+            Route::post('/backup', [SystemHealthController::class, 'storeBackup'])->name('backup.store');
+            Route::get('/backup/{history}/download', [SystemHealthController::class, 'downloadBackup'])->name('backup.download');
+            Route::delete('/backup/{history}', [SystemHealthController::class, 'destroyBackup'])->name('backup.destroy');
+            Route::put('/schedule', [SystemHealthController::class, 'updateSchedule'])->name('schedule.update');
+        });
+        // Named route alias for convenience
+        Route::get('/system-health', [SystemHealthController::class, 'index'])->name('system-health');
     });
 
     // Print report logging & view
     Route::post('/report/log', [PrintReportController::class, 'store'])->name('report.log');
     Route::get('/report/view', [PrintReportController::class, 'show'])->name('report.view');
+
+    // Saved Reports management
+    Route::get('/saved-reports', [SavedReportController::class, 'index'])->name('saved-reports.index');
+    Route::post('/saved-reports', [SavedReportController::class, 'store'])->name('saved-reports.store');
+    Route::post('/saved-reports/bulk/delete', [SavedReportController::class, 'bulkDelete'])->name('saved-reports.bulkDelete');
+    Route::post('/saved-reports/bulk/restore', [SavedReportController::class, 'bulkRestore'])->name('saved-reports.bulkRestore');
+    Route::post('/saved-reports/bulk/force', [SavedReportController::class, 'bulkForceDelete'])->name('saved-reports.bulkForceDelete');
+    Route::get('/saved-reports/{savedReport}/view', [SavedReportController::class, 'show'])->name('saved-reports.show')->whereNumber('savedReport');
+    Route::get('/saved-reports/{savedReport}/download', [SavedReportController::class, 'download'])->name('saved-reports.download')->whereNumber('savedReport');
+    Route::delete('/saved-reports/{savedReport}', [SavedReportController::class, 'destroy'])->name('saved-reports.destroy')->whereNumber('savedReport');
+    Route::post('/saved-reports/{id}/restore', [SavedReportController::class, 'restore'])->name('saved-reports.restore')->whereNumber('id');
+    Route::delete('/saved-reports/{id}/force', [SavedReportController::class, 'forceDelete'])->name('saved-reports.forceDelete')->whereNumber('id');
 
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

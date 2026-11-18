@@ -1,8 +1,11 @@
-import { useMemo } from 'react';
-import { Head } from '@inertiajs/react';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Head, router } from '@inertiajs/react';
+import { Printer, ArrowLeft, Save, Loader2, Check, ExternalLink } from 'lucide-react';
 import { Item, Category, Signatory, ReportMetadata } from '../types';
 import { calculateItemRankings, getMaxRankColumns } from '../utils/bidderRanking';
+import Toast from '../Components/Toast';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface ReportViewProps {
   items: Item[];
@@ -19,6 +22,9 @@ export default function ReportView({
   metadata,
   timestamp,
 }: ReportViewProps) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
   // Determine dynamic rank column count across all selected items (minimum 5)
   const rankColumnsCount = useMemo(() => getMaxRankColumns(items, 5), [items]);
 
@@ -26,12 +32,85 @@ export default function ReportView({
     return Array.from({ length: rankColumnsCount }, (_, i) => `RANK ${i + 1}`);
   }, [rankColumnsCount]);
 
+  const handleSavePdf = async () => {
+    const reportSheet = document.querySelector('.report-sheet') as HTMLElement;
+    if (!reportSheet || isSaving) return;
+
+    try {
+      setIsSaving(true);
+
+      const canvas = await html2canvas(reportSheet, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      const pdfBlob = pdf.output('blob');
+      const contractName = metadata.contract_name || 'Procurement of Medical Supplies';
+      const fileName = `${contractName.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+
+      const formData = new FormData();
+      formData.append('pdf', pdfBlob, fileName);
+      formData.append('contract_name', contractName);
+      if (metadata.project_ref_no) {
+        formData.append('project_ref_no', metadata.project_ref_no);
+      }
+      formData.append('item_count', String(items.length));
+      formData.append('metadata', JSON.stringify({
+        ...metadata,
+        category_count: categories.length,
+        timestamp,
+      }));
+
+      router.post('/saved-reports', formData, {
+        preserveScroll: true,
+        onSuccess: () => {
+          setIsSaving(false);
+          setIsSaved(true);
+        },
+        onError: () => {
+          setIsSaving(false);
+        },
+      });
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div
       className="min-h-screen bg-slate-100 py-6 print:py-0 print:bg-white font-sans text-black"
       style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
     >
       <Head title={`Abstract of Bids - ${metadata.contract_name || 'Official Report'}`} />
+      <Toast />
 
       {/* Floating Action Bar (Hidden in Print) */}
       <div className="max-w-[340mm] mx-auto mb-4 flex justify-between items-center print:hidden px-4">
@@ -45,12 +124,50 @@ export default function ReportView({
           <span className="text-xs text-slate-500 font-medium">
             Landscape A4 / Widescreen • {items.length} Items Selected
           </span>
+
+          {/* Print Report Button */}
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold shadow-md transition-all text-sm"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold shadow-md transition-all text-sm"
           >
-            <Printer className="w-4 h-4" /> Print / Save as PDF
+            <Printer className="w-4 h-4" /> Print Report
           </button>
+
+          {/* Save as PDF to System Button */}
+          <button
+            onClick={handleSavePdf}
+            disabled={isSaving}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold shadow-md transition-all text-sm ${
+              isSaved
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                : 'bg-emerald-700 hover:bg-emerald-800 text-white'
+            } disabled:opacity-60 disabled:cursor-not-allowed`}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Saving PDF...
+              </>
+            ) : isSaved ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-200" /> Saved to System
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" /> Save as PDF
+              </>
+            )}
+          </button>
+
+          {isSaved && (
+            <a
+              href="/saved-reports"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm"
+            >
+              View Saved Reports <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
         </div>
       </div>
 

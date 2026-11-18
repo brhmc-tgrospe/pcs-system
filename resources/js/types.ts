@@ -14,6 +14,9 @@ export interface UserPermissions {
   view_logs: boolean;
   manage_settings: boolean;
   impersonate: boolean;
+  delete_reports?: boolean;
+  restore_reports?: boolean;
+  force_delete_reports?: boolean;
 }
 
 export interface AuthUser {
@@ -224,5 +227,41 @@ export interface SearchResults {
   categories: Category[];
   bidders: Bidder[];
   users: UserSummary[];
+}
+
+export interface SavedReport {
+  id: number;
+  user_id: number;
+  project_ref_no: string | null;
+  contract_name: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  item_count: number;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
+  user?: UserSummary;
+}
+
+export interface SavedReportsProps {
+  reports: LaravelPagination<SavedReport>;
+  filters: {
+    search: string;
+    status: 'active' | 'trashed';
+    sort_field: string;
+    sort_direction: 'asc' | 'desc';
+    per_page: number;
+  };
+  counts: {
+    active: number;
+    trashed: number;
+  };
+  auth: { user: AuthUser };
+  flash?: {
+    success?: string | null;
+    error?: string | null;
+  };
 }
 

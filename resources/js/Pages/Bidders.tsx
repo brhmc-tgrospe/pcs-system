@@ -226,7 +226,7 @@ export default function Bidders() {
         user={user}
         currentView="bidders"
         onNavigate={(view) => {
-          if (view !== 'bidders') router.visit('/catalog');
+          router.visit(view === 'dashboard' ? '/catalog' : `/catalog?view=${view}`);
         }}
       />
 

@@ -1,4 +1,5 @@
-import { LayoutDashboard, BookOpen, Settings, Boxes, Tags, FileBarChart, Users, Building, Activity, SlidersHorizontal } from 'lucide-react';
+import { router, Link } from '@inertiajs/react';
+import { LayoutDashboard, BookOpen, Settings, Boxes, Tags, FileBarChart, Users, Building, Activity, SlidersHorizontal, FileCheck } from 'lucide-react';
 import { AuthUser } from '../types';
 
 interface SidebarProps {
@@ -6,7 +7,7 @@ interface SidebarProps {
   onCloseMobile: () => void;
   user: AuthUser;
   currentView: string;
-  onNavigate: (view: string) => void;
+  onNavigate?: (view: string) => void;
 }
 
 function SidebarButton({ item, isActive, onNavigate }: { item: any, isActive: boolean, onNavigate: (view: string) => void }) {
@@ -27,6 +28,14 @@ function SidebarButton({ item, isActive, onNavigate }: { item: any, isActive: bo
 }
 
 export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView, onNavigate }: SidebarProps) {
+  const handleNavigate = (view: string) => {
+    if (onNavigate) {
+      onNavigate(view);
+    } else {
+      router.visit(view === 'dashboard' ? '/catalog' : `/catalog?view=${view}`);
+    }
+  };
+
   const canManageItems = Boolean(user.can?.manage_items);
   const canManageCategories = Boolean(user.can?.manage_categories);
   const canManageBidders = Boolean(user.can?.manage_bidders);
@@ -45,6 +54,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
 
   const reportItems = [
     { id: 'print_report', label: 'Print Project Report', icon: FileBarChart },
+    { id: 'saved_reports', label: 'Saved Reports', icon: FileCheck, href: '/saved-reports' },
     ...(canViewLogs ? [{ id: 'activity_logs', label: 'Activity Logs', icon: Settings, href: '/activity-logs' }] : []),
     ...(canManageUsers ? [{ id: 'users', label: 'Manage Users', icon: Users, href: '/users' }] : []),
     ...(isDeveloper ? [{ id: 'system_health', label: 'System Health', icon: Activity, href: '/system-health' }] : []),
@@ -73,17 +83,17 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
               const isActive = currentView === item.id;
               if (item.href) {
                 return (
-                  <a
+                  <Link
                     key={item.id}
                     href={item.href}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group text-slate-400 hover:text-white hover:bg-slate-800"
                   >
                     <Icon className="w-5 h-5 text-slate-500 group-hover:text-slate-300" />
                     {item.label}
-                  </a>
+                  </Link>
                 );
               }
-              return <SidebarButton key={item.id} item={item} isActive={isActive} onNavigate={onNavigate} />;
+              return <SidebarButton key={item.id} item={item} isActive={isActive} onNavigate={handleNavigate} />;
             })}
           </nav>
         </div>
@@ -96,7 +106,7 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
               const isActive = currentView === item.id;
               if (item.href) {
                 return (
-                  <a
+                  <Link
                     key={item.id}
                     href={item.href}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group
@@ -107,10 +117,10 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, user, currentView
                   >
                     <Icon className={`w-5 h-5 ${isActive ? 'text-blue-200' : 'text-slate-500 group-hover:text-slate-300'}`} />
                     {item.label}
-                  </a>
+                  </Link>
                 );
               }
-              return <SidebarButton key={item.id} item={item} isActive={isActive} onNavigate={onNavigate} />;
+              return <SidebarButton key={item.id} item={item} isActive={isActive} onNavigate={handleNavigate} />;
             })}
           </nav>
         </div>

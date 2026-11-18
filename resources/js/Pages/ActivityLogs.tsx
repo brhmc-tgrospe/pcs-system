@@ -49,7 +49,7 @@ export default function ActivityLogs() {
         user={user}
         currentView="activity_logs"
         onNavigate={(view) => {
-          if (view !== 'activity_logs') router.visit('/catalog');
+          router.visit(view === 'dashboard' ? '/catalog' : `/catalog?view=${view}`);
         }}
       />
 

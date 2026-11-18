@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Download, FileText, CheckCircle2, AlertCircle, Users, HelpCircle, ArrowRight, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { X, Upload, Download, FileText, CheckCircle2, AlertCircle, Users, HelpCircle, ArrowRight, ChevronDown, ChevronUp, Info, RefreshCw, Award } from 'lucide-react';
 import { Category, Bidder } from '../types';
 
 interface ImportItemsModalProps {
@@ -73,10 +73,11 @@ export default function ImportItemsModal({
     const sampleBidder2 = bidders[1]?.bidder_code || 'QWE';
 
     const csvContent = [
-      'Category Code,Name,Description,Unit Type,Baseline Unit Cost,Quantity,Bidders',
-      `${sampleCategory},Surgical Face Mask N95,"High-filtration medical mask, 50pcs per box",Box,1250.00,100,"${sampleBidder1}: 1200.00, ${sampleBidder2}: 1220.00"`,
-      `${sampleCategory},Latex Examination Gloves,"Powder-free disposable gloves, 100pcs/box",Box,450.00,200,"${sampleBidder1}: 430.00"`,
-      `${sampleCategory},Digital Infrared Thermometer,"Non-contact clinical forehead thermometer",Piece,1850.00,50,"${sampleBidder2}: 1800.00"`,
+      'Category Code,Name,Description,Unit Type,Baseline Unit Cost,Quantity,Bidders,Awarded Bidder,Status',
+      'e.g. med_supp (Required),e.g. Surgical Face Mask N95 (Required),e.g. High-filtration medical mask (Required),e.g. Box (Required),e.g. 1250.00 (Required),e.g. 100 (Required),"e.g. ABC: 1200.00, QWE: 1220.00 (Optional)",e.g. ABC (Optional),"e.g. Active, No Bid, Pending Award, Failed Bid, Awarded, Closed (Optional)"',
+      `${sampleCategory},Surgical Face Mask N95,"High-filtration medical mask, 50pcs per box",Box,1250.00,100,"${sampleBidder1}: 1200.00, ${sampleBidder2}: 1220.00",,Active`,
+      `${sampleCategory},Latex Examination Gloves,"Powder-free disposable gloves, 100pcs/box",Box,450.00,200,"${sampleBidder1}: 430.00",${sampleBidder1},Awarded`,
+      `${sampleCategory},Digital Infrared Thermometer,"Non-contact clinical forehead thermometer",Piece,1850.00,50,"${sampleBidder2}: 1800.00",,Pending Award`,
     ].join('\r\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -191,7 +192,7 @@ export default function ImportItemsModal({
                         <td className="p-2.5 font-mono font-bold text-blue-600 dark:text-blue-400">Category Code</td>
                         <td className="p-2.5"><span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300">Required</span></td>
                         <td className="p-2.5 font-mono text-[11px]">Text</td>
-                        <td className="p-2.5">Must match an existing Category Code (e.g. <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">med_supp</code>, <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">itequip</code>)</td>
+                        <td className="p-2.5">Must match an existing Category Code (e.g. <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">med_supp</code>, <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">itequip</code>). Case-insensitive. If an item already exists under this Category Code, its data will be updated automatically.</td>
                       </tr>
                       <tr>
                         <td className="p-2.5 font-mono font-bold text-blue-600 dark:text-blue-400">Name</td>
@@ -229,8 +230,55 @@ export default function ImportItemsModal({
                         <td className="p-2.5 font-mono text-[11px]">Formatted Text</td>
                         <td className="p-2.5">Bidder codes and their offered unit costs (see instructions below)</td>
                       </tr>
+                      <tr>
+                        <td className="p-2.5 font-mono font-bold text-blue-600 dark:text-blue-400">Awarded Bidder</td>
+                        <td className="p-2.5"><span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Optional</span></td>
+                        <td className="p-2.5 font-mono text-[11px]">Text</td>
+                        <td className="p-2.5">Bidder Code of the awarded vendor (e.g. <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">ABC</code>). Case-insensitive. When provided, automatically overrides the item status to <strong className="text-slate-900 dark:text-white font-semibold">Awarded</strong>.</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-mono font-bold text-blue-600 dark:text-blue-400">Status</td>
+                        <td className="p-2.5"><span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Optional</span></td>
+                        <td className="p-2.5 font-mono text-[11px]">Text</td>
+                        <td className="p-2.5">
+                          Procurement status. All valid options that can be entered:
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded font-semibold">Active</code>
+                            <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded font-semibold">No Bid</code>
+                            <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded font-semibold">Pending Award</code>
+                            <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded font-semibold">Failed Bid</code>
+                            <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded font-semibold">Awarded</code>
+                            <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded font-semibold">Closed</code>
+                          </div>
+                          <span className="block mt-1 text-slate-500 dark:text-slate-400">
+                            Defaults to <code className="text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">Active</code> if empty. Case-insensitive. Note: If an Awarded Bidder code is provided, status is automatically set to Awarded.
+                          </span>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
+                </div>
+
+                {/* Special Instructions: Status, Awards & Updates */}
+                <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-300">
+                    <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <h5 className="text-xs font-bold uppercase tracking-wider">Category Code Updates, Status & Award Rules</h5>
+                  </div>
+                  <ul className="text-xs text-emerald-950/80 dark:text-emerald-200/80 space-y-1.5 leading-relaxed">
+                    <li>
+                      <strong className="font-semibold text-emerald-950 dark:text-emerald-100">• Auto-Update Existing Items:</strong> If an item already exists under the given <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono">Category Code</code>, its specifications, pricing, status, and quotations will be updated automatically rather than creating a duplicate item.
+                    </li>
+                    <li>
+                      <strong className="font-semibold text-emerald-950 dark:text-emerald-100">• Allowed Status Values:</strong> You can enter any of the following 6 statuses (case-insensitive): <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono font-bold">Active</code>, <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono font-bold">No Bid</code>, <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono font-bold">Pending Award</code>, <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono font-bold">Failed Bid</code>, <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono font-bold">Awarded</code>, or <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono font-bold">Closed</code>. If left blank, it defaults to <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono font-bold">Active</code>.
+                    </li>
+                    <li>
+                      <strong className="font-semibold text-emerald-950 dark:text-emerald-100">• Awarded Bidder Override:</strong> Entering a valid Bidder Code in the <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono">Awarded Bidder</code> column always overrides the item status to <strong>Awarded</strong> and links that bidder as the awarded winner.
+                    </li>
+                    <li>
+                      <strong className="font-semibold text-emerald-950 dark:text-emerald-100">• 2nd-Row Template Hint:</strong> The downloadable CSV template includes a 2nd row with hints, examples, and requirement markers <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono">(Required)</code> / <code className="bg-emerald-100 dark:bg-emerald-900/60 px-1 rounded font-mono">(Optional)</code>. The import process automatically skips this row.
+                    </li>
+                  </ul>
                 </div>
 
                 {/* Special Instructions: Multiple Bidders */}
@@ -272,13 +320,12 @@ export default function ImportItemsModal({
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`relative border-2 border-dashed rounded-2xl p-6 transition-all text-center cursor-pointer flex flex-col items-center justify-center gap-3 ${
-                isDragging
+              className={`relative border-2 border-dashed rounded-2xl p-6 transition-all text-center cursor-pointer flex flex-col items-center justify-center gap-3 ${isDragging
                   ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-900/20 scale-[0.99]'
                   : selectedFile
-                  ? 'border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20'
-                  : 'border-slate-300 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-slate-50/60 dark:hover:bg-slate-800/50'
-              }`}
+                    ? 'border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20'
+                    : 'border-slate-300 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-slate-50/60 dark:hover:bg-slate-800/50'
+                }`}
             >
               <input
                 ref={fileInputRef}

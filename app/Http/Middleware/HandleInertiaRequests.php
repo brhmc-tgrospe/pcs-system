@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Bidder;
 use App\Models\Category;
 use App\Models\Item;
+use App\Models\SavedReport;
 use App\Models\Signatory;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -45,6 +46,9 @@ class HandleInertiaRequests extends Middleware
                         'view_logs' => $user->can('viewAny', ActivityLog::class),
                         'manage_settings' => $user->can('manage', Signatory::class),
                         'impersonate' => $user->can('impersonate', User::class),
+                        'delete_reports' => $user->can('deleteAny', SavedReport::class),
+                        'restore_reports' => $user->can('restoreAny', SavedReport::class),
+                        'force_delete_reports' => $user->can('forceDeleteAny', SavedReport::class),
                     ],
                 ] : null,
             ],

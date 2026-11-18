@@ -1,2 +1,12 @@
-#Always run a test on every prompt or whenever there are new or updated codes. 
-#Check for errors during a test. If there are errors, immediately fix them. Run a test again to ensure that the errors are gone.
+# Always run a test on every prompt or whenever there are new or updated codes.
+# Check for errors during a test. If there are errors, immediately fix them. Run a test again to ensure that the errors are gone.
+
+# Core Development Directives & Skills Protocol:
+# Refer to AGENTS.md for the full development specifications:
+# 1. Architecture: Follow Clean Architecture & DDD via software-architecture and clean-code.
+# 2. Backend: Use cc-skill-backend-patterns, laravel-expert, and php-pro (thin controllers, actions/services, form requests, policies).
+# 3. Frontend: Follow cc-skill-frontend-patterns, react-patterns, tailwind-patterns, and cmis-table-patterns for all table/listing pages.
+# 4. Database: Follow database-design and sql-optimization-patterns (avoid N+1, eager-load relations).
+# 5. Security: Follow laravel-security-audit and security-auditor for RBAC enforcement per docs/rbac-specification.md.
+# 6. Quality & Debugging: Follow tdd-workflow (tests first/verified) and systematic-debugging (find root cause before fixing).
+# 7. Verification: Follow verification-before-completion (no completion claims without fresh verification command evidence).

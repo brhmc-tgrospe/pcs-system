@@ -22,6 +22,7 @@ import {
   Command,
   CornerDownLeft,
   Database,
+  FileCheck,
   LucideIcon
 } from 'lucide-react';
 import { AuthUser, SearchResults, Item, Category, Bidder, UserSummary } from '../types';
@@ -176,6 +177,16 @@ export default function CommandPalette({
       iconColor: 'text-violet-500',
       category: 'Navigation',
       onSelect: () => router.visit('/catalog?view=print_report'),
+    });
+
+    nav.push({
+      id: 'nav-saved-reports',
+      title: 'Saved Reports',
+      subtitle: 'Browse, view, print, or download archived official PDF reports',
+      icon: FileCheck,
+      iconColor: 'text-emerald-500',
+      category: 'Navigation',
+      onSelect: () => router.visit('/saved-reports'),
     });
 
     if (canViewLogs) {
